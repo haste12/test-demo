@@ -103,20 +103,30 @@ def check_and_update_message_limit(user_id):
         return False, "Error checking message limit"
 
 # Get API key
+print("Checking for OpenAI API key...")
 api_key = os.getenv("OPENAI_API_KEY")
-
-if not api_key:
-    print("ERROR: OpenAI API key not found in .env file")
+if api_key:
+    # Remove any type of quotes and whitespace
+    api_key = api_key.strip().strip('"').strip("'").strip('"').strip("'")
+    print(f"API Key found: Yes")
+    print(f"API Key length: {len(api_key)}")
+    print(f"API Key starts with: {api_key[:4]}...")
+    print(f"API Key value: {api_key}")  # This will help us debug
+else:
+    print("ERROR: OpenAI API key not found in environment variables")
+    print("Available environment variables:", os.environ.keys())
     exit(1)
 
 # Initialize OpenAI client
 try:
-    client = OpenAI(
-        api_key=api_key,
-        base_url="https://api.openai.com/v1"
-    )
+    print("Initializing OpenAI client...")
+    client = OpenAI(api_key=api_key)
+    print("OpenAI client initialized successfully")
 except Exception as e:
     print(f"ERROR initializing OpenAI client: {str(e)}")
+    print(f"Error type: {type(e)}")
+    print(f"Error args: {e.args}")
+    print(f"API Key being used: {api_key}")  # This will help us debug
     exit(1)
 
 @app.route("/", methods=['GET'])
@@ -187,7 +197,7 @@ def chat():
         # Get AI response
         try:
             print("Sending request to OpenAI")
-            response = client.chat.completions.create(
+            response = client.ChatCompletion.create(
                 model="gpt-3.5-turbo",
                 messages=[
                     {"role": "system", "content": SYSTEM_PROMPT},
