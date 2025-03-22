@@ -73,7 +73,7 @@ async function getAIResponse(message) {
             throw new Error('You need to be logged in to send messages');
         }
 
-        const response = await fetch('http://localhost:8000/chat', {
+        const response = await fetch('https://lfu-ai-v1-8-copy-production.up.railway.app/chat', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -147,7 +147,7 @@ async function checkRemainingMessages() {
     if (!userId) return;
 
     try {
-        const response = await fetch(`http://localhost:8000/remaining_messages/${userId}`);
+        const response = await fetch(`https://lfu-ai-v1-8-copy-production.up.railway.app/remaining_messages/${userId}`);
         const data = await response.json();
         
         if (data.message) {
@@ -202,7 +202,7 @@ async function updateRemainingMessagesPeriodically() {
     if (!userId) return;
 
     try {
-        const response = await fetch(`http://localhost:8000/remaining_messages/${userId}`);
+        const response = await fetch(`https://lfu-ai-v1-8-copy-production.up.railway.app/remaining_messages/${userId}`);
         const data = await response.json();
         
         if (data.message) {
