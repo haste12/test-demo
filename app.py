@@ -1,7 +1,7 @@
 import os
 from flask import Flask, request, jsonify, send_from_directory, render_template
 from flask_cors import CORS
-from openai import OpenAI
+import openai
 from dotenv import load_dotenv
 from prompt import SYSTEM_PROMPT, GREETING_RESPONSE, CREATOR_RESPONSE, PRESIDENT_RESPONSE, REPLACEMENTS
 from datetime import datetime, timedelta
@@ -120,7 +120,7 @@ else:
 # Initialize OpenAI client
 try:
     print("Initializing OpenAI client...")
-    client = OpenAI(api_key=api_key)
+    openai.api_key = api_key
     print("OpenAI client initialized successfully")
 except Exception as e:
     print(f"ERROR initializing OpenAI client: {str(e)}")
@@ -197,7 +197,7 @@ def chat():
         # Get AI response
         try:
             print("Sending request to OpenAI")
-            response = client.ChatCompletion.create(
+            response = openai.ChatCompletion.create(
                 model="gpt-3.5-turbo",
                 messages=[
                     {"role": "system", "content": SYSTEM_PROMPT},
