@@ -37,15 +37,10 @@ db = firestore.client()
 app = Flask(__name__)
 CORS(app, resources={
     r"/*": {
-        "origins": [
-            "https://lfu-ai.my",
-            "https://www.lfu-ai.my",
-            "https://test-demo-production.up.railway.app",
-            "https://login-form-96501.web.app",
-            "http://localhost:5502"
-        ],
+        "origins": "*",  # Allow all origins during development
         "methods": ["GET", "POST", "OPTIONS"],
-        "allow_headers": ["Content-Type"]
+        "allow_headers": ["Content-Type", "Authorization"],
+        "supports_credentials": True
     }
 })
 
