@@ -73,12 +73,10 @@ async function getAIResponse(message) {
             throw new Error('You need to be logged in to send messages');
         }
 
-        console.log('Sending request to chat endpoint...');
-        const response = await fetch('https://test-demo-production.up.railway.app/chat', {
+        const response = await fetch('https://lfu-ai.my/chat', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                'Accept': 'application/json'
             },
             body: JSON.stringify({ 
                 message: message,
@@ -86,9 +84,7 @@ async function getAIResponse(message) {
             })
         });
 
-        console.log('Response status:', response.status);
         const data = await response.json();
-        console.log('Response data:', data);
         
         // Update remaining messages display
         if (data.remaining_messages) {
@@ -100,7 +96,7 @@ async function getAIResponse(message) {
         }
 
         if (!response.ok) {
-            throw new Error(data.error || `HTTP error! status: ${response.status}`);
+            throw new Error(data.error || 'Failed to get AI response');
         }
 
         if (data.reply) {
@@ -111,8 +107,8 @@ async function getAIResponse(message) {
             throw new Error('Failed to get AI response');
         }
     } catch (error) {
-        console.error('Error details:', error);
-        throw new Error(`Failed to send message: ${error.message}`);
+        console.error('Error:', error);
+        throw error;
     }
 }
 
@@ -145,20 +141,15 @@ function updateRemainingMessages(message) {
     }
 }
 
-// Function to check remaining messages
+// Function to check remaining messages on page load
 async function checkRemainingMessages() {
     const userId = localStorage.getItem('loggedInUserId');
     if (!userId) return;
 
     try {
         console.log('Checking remaining messages...');
-        const response = await fetch(`https://test-demo-production.up.railway.app/remaining_messages/${userId}`, {
-            headers: {
-                'Accept': 'application/json'
-            }
-        });
+        const response = await fetch(`https://lfu-ai.my/remaining_messages/${userId}`);
         
-        console.log('Response status:', response.status);
         if (!response.ok) {
             const errorData = await response.json();
             throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
@@ -221,13 +212,8 @@ async function updateRemainingMessagesPeriodically() {
 
     try {
         console.log('Updating remaining messages...');
-        const response = await fetch(`https://test-demo-production.up.railway.app/remaining_messages/${userId}`, {
-            headers: {
-                'Accept': 'application/json'
-            }
-        });
+        const response = await fetch(`https://lfu-ai.my/remaining_messages/${userId}`);
         
-        console.log('Response status:', response.status);
         if (!response.ok) {
             const errorData = await response.json();
             throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
