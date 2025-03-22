@@ -118,11 +118,15 @@ except Exception as e:
 
 @app.route("/", methods=['GET'])
 def home():
-    return render_template('index.html')
+    return send_from_directory('.', 'index.html')
 
 @app.route("/ai", methods=['GET'])
 def ai_page():
-    return render_template('AI.html')
+    return send_from_directory('.', 'AI.html')
+
+@app.route("/<path:filename>")
+def serve_file(filename):
+    return send_from_directory('.', filename)
 
 @app.route("/chat", methods=['POST'])
 def chat():
