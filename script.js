@@ -73,7 +73,7 @@ async function getAIResponse(message) {
             throw new Error('You need to be logged in to send messages');
         }
 
-        const response = await fetch('https://lfu-ai-v1-8-copy-production.up.railway.app/chat', {
+        const response = await fetch('https://test-demo-production.up.railway.app/chat', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -147,14 +147,23 @@ async function checkRemainingMessages() {
     if (!userId) return;
 
     try {
-        const response = await fetch(`https://lfu-ai-v1-8-copy-production.up.railway.app/remaining_messages/${userId}`);
+        console.log('Checking remaining messages...');
+        const response = await fetch(`https://test-demo-production.up.railway.app/remaining_messages/${userId}`);
+        
+        if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
+        }
+
         const data = await response.json();
+        console.log('Received remaining messages:', data);
         
         if (data.message) {
             updateRemainingMessages(data.message);
         }
     } catch (error) {
         console.error('Error checking remaining messages:', error);
+        updateRemainingMessages('Error checking message limit');
     }
 }
 
@@ -202,14 +211,23 @@ async function updateRemainingMessagesPeriodically() {
     if (!userId) return;
 
     try {
-        const response = await fetch(`https://lfu-ai-v1-8-copy-production.up.railway.app/remaining_messages/${userId}`);
+        console.log('Updating remaining messages...');
+        const response = await fetch(`https://test-demo-production.up.railway.app/remaining_messages/${userId}`);
+        
+        if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
+        }
+
         const data = await response.json();
+        console.log('Received remaining messages update:', data);
         
         if (data.message) {
             updateRemainingMessages(data.message);
         }
     } catch (error) {
-        console.error('Error checking remaining messages:', error);
+        console.error('Error updating remaining messages:', error);
+        updateRemainingMessages('Error checking message limit');
     }
 }
 

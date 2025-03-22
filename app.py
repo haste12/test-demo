@@ -35,7 +35,13 @@ firebase_admin.initialize_app(cred)
 db = firestore.client()
 
 app = Flask(__name__)
-CORS(app)
+CORS(app, resources={
+    r"/*": {
+        "origins": ["https://test-demo-production.up.railway.app", "http://localhost:5502"],
+        "methods": ["GET", "POST", "OPTIONS"],
+        "allow_headers": ["Content-Type"]
+    }
+})
 
 # Message limit tracking
 RESET_INTERVAL = timedelta(hours=24)
