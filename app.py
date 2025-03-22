@@ -34,7 +34,7 @@ except:
 firebase_admin.initialize_app(cred)
 db = firestore.client()
 
-app = Flask(__name__)
+app = Flask(__name__, static_folder='.')
 CORS(app, resources={
     r"/*": {
         "origins": [
@@ -145,7 +145,7 @@ except Exception as e:
 def home():
     return send_from_directory('.', 'index.html')
 
-@app.route("/ai", methods=['GET'])
+@app.route("/AI.html", methods=['GET'])
 def ai_page():
     return send_from_directory('.', 'AI.html')
 
