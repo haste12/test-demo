@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Login</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link rel="stylesheet" href="style.css">
+    <link rel="icon" href="./lfu_logo-removebg-preview.png">
+    <script type="module" src="admin-auth.js"></script>
+</head>
+<body>
+    <div class="container" id="adminSignIn">
+        <img src="./lfu_logo-removebg-preview.png" alt="LFU AI Logo" 
+        style="width: 150px; height: 150px; border-radius: 50%; object-fit: cover; margin-left: 130px;">
+
+        <h1 class="form-title">Admin Login</h1>
+        <form method="post" action="">
+            <div id="adminSignInMessage" class="messageDiv" style="display:none;"></div>
+
+            <div class="input-group">
+                <i class="fas fa-envelope"></i>
+                <input type="email" id="adminEmail" placeholder="Admin Email" required>
+                <label for="adminEmail">Admin Email</label>
+            </div>
+            <div class="input-group">
+                <i class="fas fa-lock"></i>
+                <input type="password" id="adminPassword" placeholder="Admin Password" required>
+                <label for="adminPassword">Admin Password</label>
+            </div>
+            
+            <button class="btn" id="submitAdminSignIn">Sign In</button>
+        </form>
+    </div>
+</body>
+</html> 

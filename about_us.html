@@ -1,0 +1,516 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LFU AI AI</title>
+    <link rel="icon" href="./lfu_logo-removebg-preview.png">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.24.1/themes/prism-tomorrow.min.css" rel="stylesheet" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    
+    <style>
+        :root {
+            --primary-color:#1d4ed8;
+            --secondary-color: #fda900;
+            --bg-color: #f5f7fa;
+            --card-bg: #ffffff;
+            --text-primary: #333333;
+            --text-secondary: #666666;
+            --border-radius: 10px;
+            --shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            --transition: all 0.3s ease;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Poppins', sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            display: flex;
+            min-height: 100vh;
+        }
+
+        /* Sidebar Styles */
+        .sidebar {
+            width: 250px;
+            background-image: linear-gradient(to bottom, #1d4ed8, #1d4ed8);
+            color: white;
+            padding: 20px 0;
+            height: 100vh;
+            position: fixed;
+            transition: var(--transition);
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .sidebar-header {
+            display: flex;
+            align-items: center;
+            padding: 0 20px 20px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            margin-bottom: 20px;
+        }
+
+        .logo {
+            font-size: 24px;
+            font-weight: 700;
+            color: white;
+            font-style: italic;
+            margin-left: 10px;
+        }
+
+        .nav-links {
+            list-style: none;
+            padding: 0;
+            flex-grow: 1;
+        }
+
+        .nav-links li {
+            margin-bottom: 5px;
+        }
+
+        .nav-links a {
+            color: rgba(255, 255, 255, 0.8);
+            text-decoration: none;
+            padding: 12px 20px;
+            display: flex;
+            align-items: center;
+            transition: var(--transition);
+        }
+
+        .nav-links a:hover {
+            background-color: rgba(255, 255, 255, 0.1);
+            color: white;
+        }
+
+        .nav-links a i {
+            margin-right: 10px;
+            width: 20px;
+            text-align: center;
+        }
+
+       
+
+        /* Main Content Area */
+        .main-content {
+            flex: 1;
+            margin-left: 250px;
+            padding: 20px;
+            transition: var(--transition);
+        }
+
+        /* Topbar */
+        .topbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px;
+            background-color: var(--card-bg);
+            border-radius: var(--border-radius);
+            box-shadow: var(--shadow);
+            margin-bottom: 20px;
+        }
+
+        .menu-toggle {
+            font-size: 24px;
+            cursor: pointer;
+            color: var(--primary-color);
+        }
+
+       
+
+       
+
+
+
+
+        /* Responsive adjustments */
+        @media (max-width: 992px) {
+            .sidebar {
+                width: 70px;
+                transform: translateX(0);
+            }
+            
+            .sidebar.active {
+                width: 250px;
+            }
+
+            .sidebar-header {
+                justify-content: center;
+                padding: 20px 0;
+            }
+
+            .logo, .nav-text {
+                display: none;
+            }
+
+            .sidebar.active .logo, 
+            .sidebar.active .nav-text {
+                display: block;
+            }
+
+            .main-content {
+                margin-left: 70px;
+            }
+
+            .main-content.active {
+                margin-left: 250px;
+            }
+        }
+
+        /* Responsive Design */
+        @media screen and (max-width: 1200px) {
+            .content-container {
+                margin: 50px;
+                padding: 15px;
+            }
+        }
+
+        @media screen and (max-width: 992px) {
+            .content-container {
+                margin: 30px;
+            }
+            
+            h1 {
+                font-size: 24px;
+            }
+            
+            h4 {
+                font-size: 16px;
+                line-height: 1.6;
+            }
+        }
+
+        @media screen and (max-width: 768px) {
+            .sidebar {
+                transform: translateX(-100%);
+                position: fixed;
+                z-index: 1000;
+            }
+            
+            .sidebar.active {
+                transform: translateX(0);
+                width: 250px;
+            }
+            
+            .main-content {
+                margin-left: 0;
+                width: 100%;
+            }
+            
+            .content-container {
+                margin: 20px;
+            }
+            
+            .logo {
+                display: none;
+            }
+            
+            .sidebar.active .logo {
+                display: block;
+            }
+        }
+
+        @media screen and (max-width: 480px) {
+            .content-container {
+                margin: 10px;
+                padding: 10px;
+            }
+            
+            h1 {
+                font-size: 20px;
+                margin-bottom: 15px;
+            }
+            
+            h4 {
+                font-size: 14px;
+                line-height: 1.5;
+            }
+            
+            .sidebar-header {
+                padding: 15px 0;
+            }
+            
+            .nav-links a {
+                padding: 10px 15px;
+            }
+            
+            .copyright {
+                font-size: 12px;
+            }
+        }
+
+        /* Touch-friendly improvements */
+        @media (hover: none) {
+            .nav-links a {
+                padding: 15px 20px;
+            }
+            
+            .sidebar {
+                -webkit-overflow-scrolling: touch;
+            }
+        }
+
+        /* Add mobile menu toggle button */
+        .menu-toggle {
+            display: none;
+            position: fixed;
+            top: 15px;
+            left: 15px;
+            z-index: 1001;
+            background: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 10px;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        @media screen and (max-width: 768px) {
+            .menu-toggle {
+                display: block;
+            }
+        }
+      
+    </style>
+</head>
+<body>
+    <!-- Add this button before the sidebar -->
+    <button class="menu-toggle">
+        <i class="fas fa-bars"></i>
+    </button>
+    <!-- Sidebar -->
+    <div class="sidebar">
+        <div class="sidebar-header">
+            <i class="fas fa-book"></i>
+            <div class="logo">About us </div>
+        </div>
+        <ul class="nav-links">
+            <li><a href="./homepage.html"><i class="fas fa-home"></i> <span class="nav-text">User Information</span></a></li>
+            <li><a href="./AI.html"><i class="fas fa-robot"></i> <span class="nav-text">LFU AI</span></a></li>
+            <li style="background-color: rgba(255, 255, 255, 0.2); border-left: 4px solid var(--secondary-color); color: white;">
+                <a href="./about_us.html"><i class="fas fa-book"></i> <span class="nav-text"> about us</span></a>
+            </li>
+        </ul>
+        <div class="sidebar-footer">
+            <p class="footer-text">&copy; 2025 created by LFU Student</p>
+            <a href="./login.html" class="logout-btn">
+                <i class="fas fa-sign-out-alt"></i>
+                <span>Logout</span>
+            </a>
+        </div>
+    </div>
+
+
+    <!-- Main Content -->
+    <div class="main-content">
+        <!-- Top Navigation Bar -->
+
+              <!-- New Container for Content -->
+    <div class="content-container">
+        <h1 style="color: #1d4ed8;">About Us</h1>
+        <h4>Welcome to <span style="color: red;">LFU AI</span> ! We are a <span style="color: red;">group of five enthusiastic students</span>  committed to discovering and developing artificial intelligence. Our journey started with a common goal—to develop innovative AI solutions that break barriers and have a tangible impact.
+            We at LFU AI are committed to AI technology research, development, and experimentation, continuous learning, and improvement. We seek to contribute to the AI community while refining ourselves as future researchers and developers.
+            Join us on this exciting journey as we shape the future of AI!</h4>
+    </div>
+</div>
+
+<style>
+   .content-container {
+    background: white;
+    padding: 40px;
+    border-radius: 15px;
+    box-shadow: var(--shadow);
+    max-width: 1000px;
+    width: 90%;
+    margin: 40px auto;
+    text-align: center;
+}
+
+/* Responsive styles for content container */
+@media screen and (max-width: 1200px) {
+    .content-container {
+        width: 85%;
+        padding: 35px;
+        margin: 35px auto;
+    }
+}
+
+@media screen and (max-width: 992px) {
+    .content-container {
+        width: 90%;
+        padding: 30px;
+        margin: 30px auto;
+    }
+    
+    .content-container h1 {
+        font-size: 28px;
+        margin-bottom: 20px;
+    }
+    
+    .content-container h4 {
+        font-size: 16px;
+        line-height: 1.8;
+    }
+}
+
+@media screen and (max-width: 768px) {
+    .content-container {
+        width: 95%;
+        padding: 25px;
+        margin: 25px auto;
+    }
+    
+    .content-container h1 {
+        font-size: 24px;
+        margin-bottom: 15px;
+    }
+}
+
+@media screen and (max-width: 480px) {
+    .content-container {
+        width: 100%;
+        padding: 20px 15px;
+        margin: 15px auto;
+        border-radius: 10px;
+    }
+    
+    .content-container h1 {
+        font-size: 22px;
+        margin-bottom: 12px;
+    }
+    
+    .content-container h4 {
+        font-size: 14px;
+        line-height: 1.6;
+    }
+}
+
+/* Update sidebar-footer and logout button styles */
+.sidebar-footer {
+    padding: 20px;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    margin-top: auto;
+    background-color: #1d4ed8;
+    width: 100%;
+}
+
+.footer-text {
+    color: rgba(255, 255, 255, 0.7);
+    font-size: 0.9rem;
+    margin-bottom: 15px;
+}
+
+.logout-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #ffffff;        /* Changed to white background */
+    color: #1d4ed8;            /* Changed to match sidebar blue color */
+    padding: 10px 20px;
+    border-radius: 25px;
+    text-decoration: none;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    width: 100%;
+    margin-top: 10px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.logout-btn:hover {
+    background: #f8fafc;        /* Lighter white on hover */
+    transform: translateY(-2px);
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.logout-btn i {
+    margin-right: 8px;
+    color: #1d4ed8;            /* Make icon match the text color */
+}
+
+/* Update responsive styles for logout button */
+@media screen and (max-width: 992px) {
+    .sidebar-footer {
+        padding: 15px 5px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+    }
+
+    .footer-text {
+        display: none;
+    }
+
+    .logout-btn {
+        width: 40px;
+        height: 40px;
+        padding: 0;
+        border-radius: 50%;
+        justify-content: center;
+    }
+
+    .logout-btn i {
+        margin: 0;
+        font-size: 1.2rem;
+    }
+
+    .logout-btn span {
+        display: none;
+    }
+
+    .sidebar.active .footer-text,
+    .sidebar.active .logout-btn span {
+        display: block;
+    }
+
+    .sidebar.active .logout-btn {
+        width: 100%;
+        padding: 10px 20px;
+        border-radius: 25px;
+    }
+
+    .sidebar.active .logout-btn i {
+        margin-right: 8px;
+    }
+}
+</style>
+
+<script>
+    const menuToggle = document.querySelector('.menu-toggle');
+    const sidebar = document.querySelector('.sidebar');
+    const mainContent = document.querySelector('.main-content');
+
+    menuToggle.addEventListener('click', () => {
+        sidebar.classList.toggle('active');
+        mainContent.classList.toggle('active');
+    });
+
+    // Close sidebar when clicking outside
+    document.addEventListener('click', (e) => {
+        if (window.innerWidth <= 768 && 
+            !e.target.closest('.sidebar') && 
+            !e.target.closest('.menu-toggle')) {
+            sidebar.classList.remove('active');
+            mainContent.classList.remove('active');
+        }
+    });
+
+    // Handle window resize
+    window.addEventListener('resize', () => {
+        if (window.innerWidth > 768) {
+            sidebar.classList.remove('active');
+            mainContent.classList.remove('active');
+        }
+    });
+</script>
+           
+</body>
+</html>

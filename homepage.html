@@ -1,0 +1,1268 @@
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <link rel="icon" href="./lfu_logo-removebg-preview.png">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <title>User Information</title>
+
+   
+    <style>
+        :root {
+            --primary-color:#1d4ed8;
+            --secondary-color: #fda900;
+            --bg-color: #f5f7fa;
+            --card-bg: #ffffff;
+            --text-primary: #333333;
+            --text-secondary: #666666;
+            --border-radius: 10px;
+            --shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            --transition: all 0.3s ease;
+            --danger-color: #dc3545;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Poppins', sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            display: flex;
+            min-height: 100vh;
+        }
+
+        /* Sidebar Styles */
+        .sidebar {
+            width: 250px;
+            background-image: linear-gradient(to bottom, #1d4ed8, #1d4ed8);
+            color: white;
+            padding: 20px 0;
+            height: 100vh;
+            position: fixed;
+            transition: var(--transition);
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .sidebar-header {
+            display: flex;
+            align-items: center;
+            padding: 0 20px 20px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            margin-bottom: 20px;
+        }
+
+        .logo {
+            font-size: 24px;
+            font-weight: 700;
+            color: white;
+            font-style: italic;
+            margin-left: 10px;
+        }
+
+        .nav-links {
+            list-style: none;
+            padding: 0;
+            flex-grow: 1;
+        }
+
+        .nav-links li {
+            margin-bottom: 5px;
+        }
+
+        .nav-links a {
+            color: rgba(255, 255, 255, 0.8);
+            text-decoration: none;
+            padding: 12px 20px;
+            display: flex;
+            align-items: center;
+            transition: var(--transition);
+        }
+
+        .nav-links a:hover {
+            background-color: rgba(255, 255, 255, 0.1);
+            color: white;
+        }
+
+        .nav-links a i {
+            margin-right: 10px;
+            width: 20px;
+            text-align: center;
+        }
+
+        .nav-links .active {
+            background-color: rgba(255, 255, 255, 0.2);
+            border-left: 4px solid var(--secondary-color);
+            color: white;
+        }
+
+        /* Main Content Area */
+        .main-content {
+            flex: 1;
+            margin-left: 250px;
+            padding: 20px;
+            transition: var(--transition);
+        }
+
+        /* Topbar */
+        .topbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px;
+            background-color: var(--card-bg);
+            border-radius: var(--border-radius);
+            box-shadow: var(--shadow);
+            margin-bottom: 20px;
+        }
+
+        .menu-toggle {
+            font-size: 24px;
+            cursor: pointer;
+            color: var(--primary-color);
+        }
+
+        .search-box {
+            flex: 1;
+            margin: 0 20px;
+            position: relative;
+            max-width: 400px;
+        }
+
+        .search-box input {
+            width: 100%;
+            padding: 10px 15px;
+            padding-left: 40px;
+            border-radius: 50px;
+            border: 1px solid #ddd;
+            outline: none;
+            background-color: #f5f5f5;
+        }
+
+        .search-box i {
+            position: absolute;
+            left: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #888;
+        }
+
+        .user-profile {
+            display: flex;
+            align-items: center;
+            cursor: pointer;
+        }
+
+        .user-profile img {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            margin-right: 10px;
+        }
+
+        .user-info span {
+            display: block;
+            font-size: 14px;
+        }
+
+        .user-info .user-name {
+            font-weight: 600;
+            color: var(--primary-color);
+        }
+
+        /* Welcome Section */
+        .welcome-section {
+            background-color: var(--card-bg);
+            border-radius: var(--border-radius);
+            padding: 20px;
+            box-shadow: var(--shadow);
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .welcome-text h1 {
+            font-size: 24px;
+            color: var(--primary-color);
+            margin-bottom: 5px;
+            margin-left: 280px;
+        }
+
+        .welcome-text p {
+            color: var(--text-secondary);
+        }
+
+        .welcome-actions button {
+            margin-left: 10px;
+            padding: 8px 15px;
+            border-radius: 5px;
+            border: none;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            font-weight: 500;
+            transition: var(--transition);
+        }
+
+        .btn-primary {
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            border-radius: 11px;
+            padding: 6px;
+        }
+
+        .btn-outline {
+            background-color: transparent;
+            border: 1px solid #ddd;
+            color: var(--text-secondary);
+        }
+
+        .btn-primary:hover {
+            background-color: rgb(5, 181, 5);
+        }
+        
+        .btn-danger {
+            background-color: var(--danger-color);
+            color: white;
+            border: none;
+            border-radius: 11px;
+            padding: 6px;
+        }
+        
+        .btn-danger:hover {
+            background-color: #bd2130;
+        }
+
+        .btn-outline:hover {
+            border-color: var(--primary-color);
+            color: var(--primary-color);
+        }
+
+        button i {
+            margin-right: 5px;
+        }
+
+        /* Student Info Card */
+        .student-info-card {
+            background-color: var(--card-bg);
+            border-radius: var(--border-radius);
+            overflow: hidden;
+            box-shadow: var(--shadow);
+            margin-bottom: 20px;
+        }
+
+        .card-header {
+            background-color: var(--primary-color);
+            padding: 15px 20px;
+            color: white;
+            font-weight: 600;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .student-details {
+            display: flex;
+            flex-wrap: wrap;
+            padding: 0;
+        }
+
+        .detail-item {
+            flex: 1;
+            min-width: 200px;
+            padding: 20px;
+            border-right: 1px solid #eee;
+            border-bottom: 1px solid #eee;
+        }
+
+        .detail-item:last-child {
+            border-right: none;
+        }
+
+        .detail-label {
+            font-size: 14px;
+            color: var(--text-secondary);
+            margin-bottom: 5px;
+        }
+
+        .detail-value {
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--primary-color);
+        }
+
+        /* Responsive adjustments */
+        @media (max-width: 992px) {
+            .sidebar {
+                width: 70px;
+                transform: translateX(0);
+            }
+            
+            .sidebar.active {
+                width: 250px;
+            }
+
+            .sidebar-header {
+                justify-content: center;
+                padding: 20px 0;
+            }
+
+            .logo, .nav-text {
+                display: none;
+            }
+
+            .sidebar.active .logo, 
+            .sidebar.active .nav-text {
+                display: block;
+            }
+
+            .main-content {
+                margin-left: 70px;
+            }
+
+            .main-content.active {
+                margin-left: 250px;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .detail-item {
+                min-width: 100%;
+                border-right: none;
+            }
+            
+            .welcome-section {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+            
+            .welcome-actions {
+                margin-top: 15px;
+            }
+        }
+
+
+        /*password change modal*/
+
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0,0,0,0.4);
+        }
+
+        .modal-content {
+            background-color: #fefefe;
+            margin: 15% auto;
+            padding: 20px;
+            border-radius: 10px;
+            width: 80%;
+            max-width: 500px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid #eee;
+            padding-bottom: 10px;
+            margin-bottom: 20px;
+        }
+
+        .close-modal {
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            border-radius: 11px;
+            padding: 6px;
+            cursor: pointer;
+        }
+
+        .close-modal:hover {
+            background-color: red;
+            color: white;
+        }
+
+        .password-form, .delete-account-form {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .password-form .input-group, .delete-account-form .input-group {
+            margin-bottom: 15px;
+        }
+
+        .password-form label, .delete-account-form label {
+            margin-bottom: 5px;
+            color: var(--text-secondary);
+        }
+
+        .password-form input, .delete-account-form input {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+
+        .password-actions, .delete-account-actions {
+            display: flex;
+            justify-content: flex-end;
+            margin-top: 20px;
+        }
+
+        .password-actions button, .delete-account-actions button {
+            margin-left: 10px;
+        }
+
+        #passwordChangeMessage, #deleteAccountMessage {
+            margin-top: 10px;
+            text-align: center;
+        }
+
+        .error-message {
+            color: red;
+        }
+
+        .success-message {
+            color: green;
+        }
+       
+        .warning-message {
+            color: red;
+            font-weight: bold;
+        }
+       
+        .change-password-btn {
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            border-radius: 11px;
+            padding: 6px;
+        }
+
+        .change-password-btn:hover {
+            background-color: #fda900;
+        }
+        
+        .delete-account-btn {
+            background-color: var(--danger-color);
+            color: white;
+            border: none;
+            border-radius: 11px;
+            padding: 6px;
+            margin-top: 10px;
+            margin-left: 10px;
+        }
+        
+        .delete-account-btn:hover {
+            background-color: #bd2130;
+        }
+        
+        .action-buttons {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin: 10px;
+        }
+
+        .edit-name-btn {
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            border-radius: 11px;
+            padding: 6px;
+        }
+        .edit-name-btn:hover {
+            background-color: #fda900;
+        }
+
+        body {
+    font-family: 'Poppins', sans-serif;
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+.container {
+    width: 90%;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+.sidebar {
+    width: 250px;
+    background: #1d4ed8;
+    color: white;
+    height: 100vh;
+    position: fixed;
+    transition: all 0.3s ease;
+}
+
+.main-content {
+    margin-left: 250px;
+    padding: 20px;
+    transition: all 0.3s ease;
+}
+
+/* Tablet styles */
+@media (max-width: 768px) {
+    .sidebar {
+        width: 70px;
+    }
+    .main-content {
+        margin-left: 70px;
+    }
+}
+
+/* Mobile styles */
+@media (max-width: 480px) {
+    .sidebar {
+        width: 50px;
+    }
+    .main-content {
+        margin-left: 50px;
+    }
+}
+
+/* Base responsive styles */
+@media (max-width: 1200px) {
+    .student-info-card {
+        margin: 10px;
+    }
+    
+    .welcome-section {
+        padding: 15px;
+    }
+}
+
+@media (max-width: 992px) {
+    .sidebar {
+        transform: translateX(-100%);
+        z-index: 1000;
+    }
+    
+    .sidebar.active {
+        transform: translateX(0);
+        width: 250px;
+    }
+    
+    .main-content {
+        margin-left: 0;
+        width: 100%;
+    }
+    
+    .main-content.active {
+        margin-left: 0;
+    }
+    
+    .welcome-text h1 {
+        margin-left: 0;
+        font-size: 20px;
+    }
+}
+
+@media (max-width: 768px) {
+    .topbar {
+        flex-direction: column;
+        gap: 10px;
+    }
+    
+    .search-box {
+        width: 100%;
+        max-width: 100%;
+        margin: 10px 0;
+    }
+    
+    .student-details {
+        flex-direction: column;
+    }
+    
+    .detail-item {
+        width: 100%;
+        border-right: none;
+        border-bottom: 1px solid #eee;
+    }
+    
+    .modal-content {
+        width: 95%;
+        margin: 10% auto;
+    }
+    
+    .action-buttons {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    
+    .action-buttons button {
+        width: 100%;
+        margin: 5px 0;
+    }
+}
+
+@media (max-width: 480px) {
+    .welcome-section {
+        padding: 10px;
+    }
+    
+    .topbar {
+        padding: 10px;
+    }
+    
+    .user-profile img {
+        width: 30px;
+        height: 30px;
+    }
+    
+    .user-info span {
+        font-size: 12px;
+    }
+    
+    .modal-content {
+        padding: 15px;
+    }
+    
+    .h2 {
+        font-size: 18px;
+    }
+}
+
+/* Touch-friendly improvements */
+@media (hover: none) {
+    .nav-links a {
+        padding: 15px 20px;
+    }
+    
+    button {
+        min-height: 44px;
+    }
+    
+    input {
+        min-height: 44px;
+    }
+}
+
+/* Add these new styles for the sidebar footer and logout button */
+.sidebar-footer {
+    padding: 20px;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    margin-top: auto;
+    background-color: #1d4ed8;
+    width: 100%;
+}
+
+.footer-text {
+    color: rgba(255, 255, 255, 0.7);
+    font-size: 0.9rem;
+    margin-bottom: 15px;
+}
+
+.logout-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #ffffff;
+    color: #1d4ed8;
+    padding: 10px 20px;
+    border-radius: 25px;
+    text-decoration: none;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    width: 100%;
+    margin-top: 10px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.logout-btn:hover {
+    background: #f8fafc;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.logout-btn i {
+    margin-right: 8px;
+    color: #1d4ed8;
+}
+
+/* Update responsive styles for logout button */
+@media screen and (max-width: 992px) {
+    .sidebar-footer {
+        padding: 15px 5px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+    }
+
+    .footer-text {
+        display: none;
+    }
+
+    .logout-btn {
+        width: 40px;
+        height: 40px;
+        padding: 0;
+        border-radius: 50%;
+        justify-content: center;
+    }
+
+    .logout-btn i {
+        margin: 0;
+        font-size: 1.2rem;
+    }
+
+    .logout-btn span {
+        display: none;
+    }
+
+    .sidebar.active .footer-text,
+    .sidebar.active .logout-btn span {
+        display: block;
+    }
+
+    .sidebar.active .logout-btn {
+        width: 100%;
+        padding: 10px 20px;
+        border-radius: 25px;
+    }
+
+    .sidebar.active .logout-btn i {
+        margin-right: 8px;
+    }
+}
+    </style>
+</head>
+<body>
+
+    
+    <!-- Sidebar -->
+    <div class="sidebar">
+        <div class="sidebar-header">
+            <i class="fas fa-robot"></i>
+            <div class="logo">AI Dashbord</div>
+        </div>
+        <ul class="nav-links">
+            <li style="background-color: rgba(255, 255, 255, 0.2); border-left: 4px solid var(--secondary-color); color: white;">
+                <a href="./homepage.html"><i class="fas fa-home"></i> <span class="nav-text">User Information</span></a>
+            </li>
+            <li><a href="./AI.html"><i class="fas fa-robot"></i> <span class="nav-text">LFU AI</span></a></li>
+            <li><a href="./about_us.html"><i class="fas fa-book"></i> <span class="nav-text"> about us</span></a></li>
+        </ul>
+        <div class="sidebar-footer">
+            <p class="footer-text">&copy; 2025 created by LFU Student</p>
+            <a href="./login.html" class="logout-btn">
+                <i class="fas fa-sign-out-alt"></i>
+                <span>Logout</span>
+            </a>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="main-content">
+        <!-- Top Navigation Bar -->
+        <div class="topbar">
+            <div class="menu-toggle">
+                <i class="fas fa-bars"></i>
+            </div>
+
+            <div class="user-profile">
+               
+                <div class="user-info">
+                    <span class="user-name" ></span>
+                 
+                </div>
+            </div>
+        </div>
+
+        <!-- Welcome Section -->
+        <div class="welcome-section">
+            <div class="welcome-text">
+                <h1>Welcome to User Information</h1>
+            </div>
+            <div class="welcome-actions">
+          
+            </div>
+        </div>
+
+    <script type="module" src="./homepage.js"></script>
+    <div class="student-info-card">
+        <div class="card-header">
+            <span>User Profile</span>
+            <i class="fas fa-user"></i>
+        </div>
+        <div class="student-details">
+            <div class="detail-item">
+                <div class="detail-label">First Name</div>
+                <div class="detail-value" id="loggedUserFName">-</div>
+            </div>
+            <div class="detail-item">
+                <div class="detail-label">Last Name</div>
+                <div class="detail-value" id="loggedUserLName">-</div>
+            </div>
+            <div class="detail-item">
+                <div class="detail-label">Email</div>
+                <div class="detail-value" id="loggedUserEmail">-</div>
+            </div>
+        </div>
+        <div class="detail-label" style="margin-left: 10px;">Actions</div>
+        <div class="action-buttons">
+            <button id="changePasswordBtn" class="change-password-btn">
+                <i class="fas fa-lock"></i> Change Password
+            </button>
+
+            <!-- Add this inside the student-info-card div, within the action-buttons div, after the change password button -->
+<button id="editNameBtn" class="edit-name-btn">
+    <i class="fas fa-edit"></i> Edit Name
+</button>
+
+<!-- Add this new modal after the delete account modal -->
+<div id="editNameModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2 class="h2">Edit Profile Information</h2>
+            <span class="close-modal">&times;</span>
+        </div>
+        <form id="editNameForm" class="password-form">
+            <div class="input-group">
+                <label for="editFirstName">First Name</label>
+                <input type="text" id="editFirstName" required>
+            </div>
+            <div class="input-group">
+                <label for="editLastName">Last Name</label>
+                <input type="text" id="editLastName" required>
+            </div>
+            <div id="editNameMessage"></div>
+            <div class="password-actions">
+                <button type="button" class="btn-outline close-modal">Cancel</button>
+                <button type="submit" class="btn-primary">Update Profile</button>
+            </div>
+        </form>
+    </div>
+</div>
+        
+        </div>
+        <br>
+        <br>
+
+    </div>
+
+  
+
+
+
+    <button id="deleteAccountBtn" class="delete-account-btn">
+        <i class="fas fa-trash"></i> Delete Account
+    </button>
+
+
+      <!-- Password Change Modal -->
+      <div id="passwordChangeModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="h2">Change Password</h2>
+                <span class="close-modal">&times;</span>
+            </div>
+            <form id="changePasswordForm" class="password-form">
+                <div class="input-group">
+                    <label for="currentPassword">Current Password</label>
+                    <input type="password" id="currentPassword" required>
+                </div>
+                <div class="input-group">
+                    <label for="newPassword">New Password</label>
+                    <input type="password" id="newPassword" required>
+                </div>
+                <div class="input-group">
+                    <label for="confirmNewPassword">Confirm New Password</label>
+                    <input type="password" id="confirmNewPassword" required>
+                </div>
+                <div id="passwordChangeMessage"></div>
+                <div class="password-actions">
+                    <button type="button" class="btn-outline close-modal">Cancel</button>
+                    <button type="submit" class="btn-primary">Change Password</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Delete Account Modal -->
+    <div id="deleteAccountModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="h2">Delete Account</h2>
+                <span class="close-modal">&times;</span>
+            </div>
+            <form id="deleteAccountForm" class="delete-account-form">
+                <p class="warning-message">Warning: This action cannot be undone. All your data will be permanently deleted.</p>
+                <div class="input-group">
+                    <label for="deletePassword">Enter your password to confirm</label>
+                    <input type="password" id="deletePassword" required>
+                </div>
+                <div id="deleteAccountMessage"></div>
+                <div class="delete-account-actions">
+                    <button type="button" class="btn-outline close-modal">Cancel</button>
+                    <button type="submit" class="btn-danger">Delete My Account</button>
+                </div>
+            </form>
+        </div>
+    </div>
+                
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.11.1/firebase-app.js";
+        import { 
+            getAuth, 
+            reauthenticateWithCredential, 
+            updatePassword, 
+            EmailAuthProvider,
+            deleteUser,
+            onAuthStateChanged
+            
+        } from "https://www.gstatic.com/firebasejs/10.11.1/firebase-auth.js";
+        import { 
+            getFirestore, 
+            doc, 
+            getDoc,
+            deleteDoc,
+            collection,
+            query,
+            where,
+            getDocs,
+            updateDoc
+        } from "https://www.gstatic.com/firebasejs/10.11.1/firebase-firestore.js";
+
+        // Firebase Configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyAjwt0a3WwFZh3ka6up3MDwMmdlkQzs34k",
+            authDomain: "login-form-96501.firebaseapp.com",
+            projectId: "login-form-96501",
+            storageBucket: "login-form-96501.appspot.com",
+            messagingSenderId: "5088309189",
+            appId: "1:5088309189:web:5f331dec8180376217a5ac"
+        };
+
+        // Initialize Firebase
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth();
+        const db = getFirestore();
+
+        // Password Change Modal Logic
+        const passwordChangeModal = document.getElementById('passwordChangeModal');
+        const changePasswordBtn = document.getElementById('changePasswordBtn');
+        const passwordCloseModalButtons = document.querySelectorAll('#passwordChangeModal .close-modal');
+        const changePasswordForm = document.getElementById('changePasswordForm');
+        const passwordChangeMessage = document.getElementById('passwordChangeMessage');
+
+        // Delete Account Modal Logic
+        const deleteAccountModal = document.getElementById('deleteAccountModal');
+        const deleteAccountBtn = document.getElementById('deleteAccountBtn');
+        const deleteCloseModalButtons = document.querySelectorAll('#deleteAccountModal .close-modal');
+        const deleteAccountForm = document.getElementById('deleteAccountForm');
+        const deleteAccountMessage = document.getElementById('deleteAccountMessage');
+
+        // Open Password Change Modal
+        changePasswordBtn.addEventListener('click', () => {
+            passwordChangeModal.style.display = 'block';
+        });
+
+        // Close Password Change Modal
+        passwordCloseModalButtons.forEach(button => {
+            button.addEventListener('click', () => {
+                passwordChangeModal.style.display = 'none';
+                changePasswordForm.reset();
+                passwordChangeMessage.textContent = '';
+            });
+        });
+
+        // Open Delete Account Modal
+        deleteAccountBtn.addEventListener('click', () => {
+            deleteAccountModal.style.display = 'block';
+        });
+
+        // Close Delete Account Modal
+        deleteCloseModalButtons.forEach(button => {
+            button.addEventListener('click', () => {
+                deleteAccountModal.style.display = 'none';
+                deleteAccountForm.reset();
+                deleteAccountMessage.textContent = '';
+            });
+        });
+
+        // Handle Password Change
+        changePasswordForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const currentPassword = document.getElementById('currentPassword').value;
+            const newPassword = document.getElementById('newPassword').value;
+            const confirmNewPassword = document.getElementById('confirmNewPassword').value;
+
+            // Validate new password
+            if (newPassword !== confirmNewPassword) {
+                passwordChangeMessage.textContent = 'New passwords do not match.';
+                passwordChangeMessage.className = 'error-message';
+                return;
+            }
+
+            if (newPassword.length < 6) {
+                passwordChangeMessage.textContent = 'Password must be at least 6 characters long.';
+                passwordChangeMessage.className = 'error-message';
+                return;
+            }
+
+            try {
+                const user = auth.currentUser;
+                
+                // Reauthenticate the user
+                const credential = EmailAuthProvider.credential(user.email, currentPassword);
+                await reauthenticateWithCredential(user, credential);
+
+                // Update password
+                await updatePassword(user, newPassword);
+
+                // Clear form and show success message
+                changePasswordForm.reset();
+                passwordChangeMessage.textContent = 'Password changed successfully!';
+                passwordChangeMessage.className = 'success-message';
+
+                // Close modal after a short delay
+                setTimeout(() => {
+                    passwordChangeModal.style.display = 'none';
+                }, 2000);
+
+            } catch (error) {
+                console.error('Password change error:', error);
+                
+                // Handle specific error messages
+                switch (error.code) {
+                    case 'auth/wrong-password':
+                        passwordChangeMessage.textContent = 'Current password is incorrect.';
+                        break;
+                    case 'auth/weak-password':
+                        passwordChangeMessage.textContent = 'New password is too weak.';
+                        break;
+                    default:
+                        passwordChangeMessage.textContent = 'Failed to change password. Please try again.';
+                }
+                passwordChangeMessage.className = 'error-message';
+            }
+        });
+
+        // Handle Delete Account
+        deleteAccountForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const password = document.getElementById('deletePassword').value;
+
+            try {
+                const user = auth.currentUser;
+                
+                // Reauthenticate the user
+                const credential = EmailAuthProvider.credential(user.email, password);
+                await reauthenticateWithCredential(user, credential);
+
+                // Delete user data from Firestore first
+                const userId = user.uid;
+                
+                // Delete user document
+                await deleteDoc(doc(db, "users", userId));
+                
+                // Delete user chat messages
+                const chatsQuery = query(collection(db, "chats"), where("userId", "==", userId));
+                const chatsSnapshot = await getDocs(chatsQuery);
+                
+                const deletionPromises = [];
+                chatsSnapshot.forEach((doc) => {
+                    deletionPromises.push(deleteDoc(doc.ref));
+                });
+                
+                await Promise.all(deletionPromises);
+                
+                // Finally delete the user account
+                await deleteUser(user);
+                
+                // Show success message
+                deleteAccountMessage.textContent = 'Account deleted successfully!';
+                deleteAccountMessage.className = 'success-message';
+                
+                // Clear local storage
+                localStorage.removeItem('loggedInUserId');
+                
+                // Redirect to login page after a short delay
+                setTimeout(() => {
+                    window.location.href = 'login.html';
+                }, 2000);
+                
+            } catch (error) {
+                console.error('Account deletion error:', error);
+                
+                // Handle specific error messages
+                switch (error.code) {
+                    case 'auth/wrong-password':
+                        deleteAccountMessage.textContent = 'Password is incorrect.';
+                        break;
+                    default:
+                        deleteAccountMessage.textContent = 'Failed to delete account. Please try again.';
+                }
+                deleteAccountMessage.className = 'error-message';
+            }
+        });
+
+        // Fetch and Display User Information
+        const loggedInUserId = localStorage.getItem('loggedInUserId');
+        
+        if (loggedInUserId) {
+            const userDocRef = doc(db, "users", loggedInUserId);
+            
+            getDoc(userDocRef).then((docSnap) => {
+                if (docSnap.exists()) {
+                    const userData = docSnap.data();
+                    document.getElementById('loggedUserFName').textContent = userData.firstName || '-';
+                    document.getElementById('loggedUserLName').textContent = userData.lastName || '-';
+                    document.getElementById('loggedUserEmail').textContent = userData.email || '-';
+                }
+            }).catch((error) => {
+                console.error("Error fetching user data:", error);
+            });
+        }
+        
+        // Close modals when clicking outside
+        window.addEventListener('click', (event) => {
+            if (event.target === passwordChangeModal) {
+                passwordChangeModal.style.display = 'none';
+                changePasswordForm.reset();
+                passwordChangeMessage.textContent = '';
+            }
+            if (event.target === deleteAccountModal) {
+                deleteAccountModal.style.display = 'none';
+                deleteAccountForm.reset();
+                deleteAccountMessage.textContent = '';
+            }
+        });
+
+
+
+
+
+        // Edit Name Modal Logic
+    const editNameModal = document.getElementById('editNameModal');
+    const editNameBtn = document.getElementById('editNameBtn');
+    const editNameCloseModalButtons = document.querySelectorAll('#editNameModal .close-modal');
+    const editNameForm = document.getElementById('editNameForm');
+    const editNameMessage = document.getElementById('editNameMessage');
+    const editFirstNameInput = document.getElementById('editFirstName');
+    const editLastNameInput = document.getElementById('editLastName');
+
+    // Open Edit Name Modal
+    editNameBtn.addEventListener('click', () => {
+        // Populate the form with current values
+        const currentFirstName = document.getElementById('loggedUserFName').textContent;
+        const currentLastName = document.getElementById('loggedUserLName').textContent;
+        
+        // Set the current values in the form
+        editFirstNameInput.value = currentFirstName !== '-' ? currentFirstName : '';
+        editLastNameInput.value = currentLastName !== '-' ? currentLastName : '';
+        
+        // Show the modal
+        editNameModal.style.display = 'block';
+    });
+
+    // Close Edit Name Modal
+    editNameCloseModalButtons.forEach(button => {
+        button.addEventListener('click', () => {
+            editNameModal.style.display = 'none';
+            editNameMessage.textContent = '';
+        });
+    });
+
+    // Handle Edit Name Form Submission
+    editNameForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const firstName = editFirstNameInput.value.trim();
+        const lastName = editLastNameInput.value.trim();
+
+        // Validate inputs
+        if (!firstName || !lastName) {
+            editNameMessage.textContent = 'Both first name and last name are required.';
+            editNameMessage.className = 'error-message';
+            return;
+        }
+
+        try {
+            const userId = localStorage.getItem('loggedInUserId');
+            if (!userId) {
+                throw new Error('User not authenticated');
+            }
+
+            // Update user data in Firestore
+            const userDocRef = doc(db, "users", userId);
+            await updateDoc(userDocRef, {
+                firstName: firstName,
+                lastName: lastName
+            });
+
+            // Update the UI immediately
+            document.getElementById('loggedUserFName').textContent = firstName;
+            document.getElementById('loggedUserLName').textContent = lastName;
+
+            // Show success message
+            editNameMessage.textContent = 'Profile updated successfully!';
+            editNameMessage.className = 'success-message';
+
+            // Close modal after a short delay
+            setTimeout(() => {
+                editNameModal.style.display = 'none';
+            }, 2000);
+
+        } catch (error) {
+            console.error('Profile update error:', error);
+            editNameMessage.textContent = 'Failed to update profile. Please try again.';
+            editNameMessage.className = 'error-message';
+        }
+    });
+
+    // Close modal when clicking outside
+    window.addEventListener('click', (event) => {
+        if (event.target === editNameModal) {
+            editNameModal.style.display = 'none';
+            editNameMessage.textContent = '';
+        }
+    });
+
+
+
+
+    //toggle 
+    // Add this code to your homepage.js file or add it directly in a script tag at the bottom of your HTML
+
+// Get DOM elements
+const menuToggle = document.querySelector('.menu-toggle');
+const sidebar = document.querySelector('.sidebar');
+const mainContent = document.querySelector('.main-content');
+
+// Add click event listener to toggle sidebar
+menuToggle.addEventListener('click', () => {
+    sidebar.classList.toggle('active');
+    mainContent.classList.toggle('active');
+});
+
+// Close sidebar when clicking outside on mobile
+document.addEventListener('click', (e) => {
+    // Only act if sidebar is open (has active class) and viewport is small
+    if (window.innerWidth <= 992 && 
+        sidebar.classList.contains('active') && 
+        !sidebar.contains(e.target) && 
+        !menuToggle.contains(e.target)) {
+        sidebar.classList.remove('active');
+        mainContent.classList.remove('active');
+    }
+});
+    </script>
+</body>
+</html>

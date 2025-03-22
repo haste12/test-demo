@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Verify Your Email</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <img src="lfu_logo-removebg-preview.png" alt="LFU AI Logo" 
+        style="width: 150px; height: 150px; border-radius: 50%; object-fit: cover; margin-left: 130px;">
+        
+        <h1>Verify Your Email</h1>
+        
+        <div class="verification-instructions">
+            <p>We've sent a verification email to your registered email address.</p>
+            <p>Please follow these steps:</p>
+            <ol>
+                <li>Check your email inbox (and spam folder)</li>
+                <li>Look for an email from our verification service</li>
+                <li>Click on the verification link in the email</li>
+            </ol>
+            <br>
+            <div class="actions">
+                <button id="resendVerification" class="btn">Resend Verification Email</button>
+                <br>
+                <br>
+                <button id="backToLogin" class="btn">Back to Login</button>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        import { getAuth, sendEmailVerification } from "https://www.gstatic.com/firebasejs/10.11.1/firebase-auth.js";
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.11.1/firebase-app.js";
+
+        // Your Firebase configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyAjwt0a3WwFZh3ka6up3MDwMmdlkQzs34k",
+            authDomain: "login-form-96501.firebaseapp.com",
+            projectId: "login-form-96501",
+            storageBucket: "login-form-96501.appspot.com",
+            messagingSenderId: "5088309189",
+            appId: "1:5088309189:web:5f331dec8180376217a5ac"
+        };
+
+        // Initialize Firebase
+        initializeApp(firebaseConfig);
+
+        document.getElementById('resendVerification')?.addEventListener('click', () => {
+            const auth = getAuth();
+            const user = auth.currentUser;
+            
+            if (user) {
+                sendEmailVerification(user)
+                .then(() => {
+                    alert('Verification email sent again!');
+                })
+                .catch((error) => {
+                    console.error('Error sending verification email', error);
+                    alert('Failed to send verification email. Please try again.');
+                });
+            } else {
+                alert('No user is currently signed in.');
+                window.location.href = 'login.html';
+            }
+        });
+
+        document.getElementById('backToLogin')?.addEventListener('click', () => {
+            window.location.href = 'login.html';
+        });
+    </script>
+</body>
+</html>
