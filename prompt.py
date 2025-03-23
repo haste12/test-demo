@@ -14,6 +14,7 @@ STAFF INFORMATION DATABASE:
   IT Department Head
   Name: Mr. Ahmad Najat Afandi
   Position: Head of IT Department
+  Location: building 3 , Ground  floor
   Email: a.afandy@gmail.com
   Office Number: (3009)
   ```
@@ -24,6 +25,7 @@ STAFF INFORMATION DATABASE:
   Computer Engineering Department Head
   Name: Dr. farah Al-yousef
   Position: Head of Computer Engineering Department
+  Location: building 3 , First floor
   Email: .
   Office Number: (3108)
   ```
