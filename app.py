@@ -42,7 +42,16 @@ CORS(app, resources={
             "https://www.lfu-ai.my",
             "https://test-demo-production.up.railway.app",
             "https://login-form-96501.web.app",
-            "http://localhost:5502"
+            "http://localhost:5502",
+            "http://localhost:5500",
+            "http://localhost:5173",
+            "http://localhost:3000",
+            "http://localhost:8000",
+            "http://127.0.0.1:5500",
+            "http://127.0.0.1:5502",
+            "http://127.0.0.1:5173",
+            "http://127.0.0.1:3000",
+            "http://127.0.0.1:8000"
         ],
         "methods": ["GET", "POST", "OPTIONS"],
         "allow_headers": ["Content-Type"]
@@ -52,34 +61,42 @@ CORS(app, resources={
 # Message limit tracking
 RESET_INTERVAL = timedelta(hours=24)
 user_messages = defaultdict(lambda: {'count': 0, 'last_reset': datetime.now()})
+MAX_HISTORY_MESSAGES = 10  # Maximum number of previous messages to include
 
 def check_and_update_message_limit(user_id):
     try:
+        print(f"Checking message limit for user: {user_id}")
         # Get user data from Firebase
         user_ref = db.collection('users').document(user_id)
         user_doc = user_ref.get()
         
         if not user_doc.exists:
+            print(f"User not found: {user_id}")
             return False, "User not found"
             
         user_data = user_doc.to_dict()
+        print(f"User data: {user_data}")
         current_time = datetime.now()
         
         # Check if user is suspended
         if user_data.get('suspended', False):
+            print(f"User is suspended: {user_id}")
             return False, "Your account is suspended"
             
         # Get daily limit (null/None means unlimited)
         daily_limit = user_data.get('dailyLimit')
+        print(f"Daily limit: {daily_limit}")
         if daily_limit is None:
             return True, "No message limit (Unlimited)"
             
         # Get last reset time
         last_reset = user_data.get('lastResetTime', current_time).timestamp()
         last_reset_dt = datetime.fromtimestamp(last_reset)
+        print(f"Last reset: {last_reset_dt}, Current time: {current_time}")
         
         # Reset count if 24 hours have passed
         if current_time - last_reset_dt >= RESET_INTERVAL:
+            print(f"Resetting message count for user: {user_id}")
             user_ref.update({
                 'messageCount': 1,  # First message of new period
                 'lastResetTime': current_time
@@ -87,12 +104,14 @@ def check_and_update_message_limit(user_id):
             message_count = 1
         else:
             message_count = user_data.get('messageCount', 0) + 1
+            print(f"Incrementing message count to: {message_count}")
             
         # Check if user has exceeded their limit
         if message_count > daily_limit:
             time_until_reset = last_reset_dt + RESET_INTERVAL - current_time
             hours, remainder = divmod(int(time_until_reset.total_seconds()), 3600)
             minutes, _ = divmod(remainder, 60)
+            print(f"User {user_id} has exceeded limit. Reset in {hours}h {minutes}m")
             return False, f"Message limit reached. Your limit will reset in {hours}h {minutes}m"
             
         # Increment message count
@@ -112,6 +131,10 @@ def check_and_update_message_limit(user_id):
         
     except Exception as e:
         print(f"Error checking message limit: {str(e)}")
+        print(f"Error type: {type(e)}")
+        print(f"Error args: {e.args}")
+        import traceback
+        print(traceback.format_exc())
         return False, "Error checking message limit"
 
 # Get API key
@@ -132,7 +155,7 @@ else:
 # Initialize OpenAI client
 try:
     print("Initializing OpenAI client...")
-    openai.api_key = api_key
+    openai_client = openai.OpenAI(api_key=api_key)
     print("OpenAI client initialized successfully")
 except Exception as e:
     print(f"ERROR initializing OpenAI client: {str(e)}")
@@ -152,6 +175,39 @@ def ai_page():
 @app.route("/<path:filename>")
 def serve_file(filename):
     return send_from_directory('.', filename)
+
+# Get chat history for a user from Firebase
+def get_chat_history(user_id, limit=MAX_HISTORY_MESSAGES):
+    try:
+        print(f"Getting chat history for user: {user_id}, limit: {limit}")
+        # Get chat history from Firebase
+        chats_ref = db.collection('chats')
+        query = chats_ref.where('userId', '==', user_id).order_by('timestamp', direction=firestore.Query.DESCENDING).limit(limit)
+        
+        chat_docs = query.get()
+        
+        # Convert to list and reverse to get chronological order
+        chat_history = []
+        for doc in chat_docs:
+            chat_data = doc.to_dict()
+            # Only add if both messages are present
+            if 'userMessage' in chat_data and 'aiReply' in chat_data:
+                chat_history.append({
+                    'user': chat_data['userMessage'],
+                    'ai': chat_data['aiReply'],
+                    'timestamp': chat_data.get('timestamp', None)
+                })
+        
+        # Reverse to get chronological order (oldest first)
+        chat_history.reverse()
+        print(f"Retrieved {len(chat_history)} history messages")
+        return chat_history
+    
+    except Exception as e:
+        print(f"Error getting chat history: {str(e)}")
+        import traceback
+        print(traceback.format_exc())
+        return []
 
 @app.route("/chat", methods=['POST'])
 def chat():
@@ -206,15 +262,28 @@ def chat():
                 "remaining_messages": limit_message
             })
 
+        # Get chat history
+        chat_history = get_chat_history(user_id)
+        
+        # Prepare messages for OpenAI
+        messages = [{"role": "system", "content": SYSTEM_PROMPT}]
+        
+        # Add chat history
+        for chat in chat_history:
+            messages.append({"role": "user", "content": chat['user']})
+            messages.append({"role": "assistant", "content": chat['ai']})
+        
+        # Add current message
+        messages.append({"role": "user", "content": user_message})
+        
+        print(f"Sending {len(messages)} messages to OpenAI")
+
         # Get AI response
         try:
             print("Sending request to OpenAI")
-            response = openai.ChatCompletion.create(
+            response = openai_client.chat.completions.create(
                 model="gpt-3.5-turbo",
-                messages=[
-                    {"role": "system", "content": SYSTEM_PROMPT},
-                    {"role": "user", "content": user_message}
-                ]
+                messages=messages
             )
             print("Received response from OpenAI")
             
@@ -241,32 +310,39 @@ def chat():
 @app.route("/remaining_messages/<user_id>", methods=['GET'])
 def get_remaining_messages(user_id):
     try:
+        print(f"Getting remaining messages for user: {user_id}")
         # Get user data from Firebase
         user_ref = db.collection('users').document(user_id)
         user_doc = user_ref.get()
         
         if not user_doc.exists:
+            print(f"User not found: {user_id}")
             return jsonify({"error": "User not found"}), 404
             
         user_data = user_doc.to_dict()
+        print(f"User data: {user_data}")
         current_time = datetime.now()
         
         # Get daily limit
         daily_limit = user_data.get('dailyLimit')
+        print(f"Daily limit: {daily_limit}")
         if daily_limit is None:
             return jsonify({
                 "message": "No message limit (Unlimited)",
                 "hours_until_reset": 0,
-                "minutes_until_reset": 0
+                "minutes_until_reset": 0,
+                "remaining_messages": -1  # Unlimited
             })
             
         # Get last reset time and message count
         last_reset = user_data.get('lastResetTime', current_time).timestamp()
         last_reset_dt = datetime.fromtimestamp(last_reset)
         message_count = user_data.get('messageCount', 0)
+        print(f"Last reset: {last_reset_dt}, Current time: {current_time}, Message count: {message_count}")
         
         # Reset count if 24 hours have passed
         if current_time - last_reset_dt >= RESET_INTERVAL:
+            print(f"Resetting message count for user: {user_id}")
             message_count = 0
             user_ref.update({
                 'messageCount': 0,
@@ -275,21 +351,90 @@ def get_remaining_messages(user_id):
             
         # Calculate remaining messages
         remaining_messages = daily_limit - message_count
+        print(f"Remaining messages: {remaining_messages}")
         
         # Calculate time until reset
         time_until_reset = last_reset_dt + RESET_INTERVAL - current_time
         hours, remainder = divmod(int(time_until_reset.total_seconds()), 3600)
         minutes, _ = divmod(remainder, 60)
+        print(f"Time until reset: {hours}h {minutes}m")
         
-        return jsonify({
+        response_data = {
             "message": f"Messages remaining today: {remaining_messages} | Resets in {hours}h {minutes}m",
             "hours_until_reset": hours,
-            "minutes_until_reset": minutes
-        })
+            "minutes_until_reset": minutes,
+            "remaining_messages": remaining_messages
+        }
+        print(f"Response data: {response_data}")
+        return jsonify(response_data)
         
     except Exception as e:
         print(f"Error getting remaining messages: {str(e)}")
+        print(f"Error type: {type(e)}")
+        print(f"Error args: {e.args}")
+        import traceback
+        print(traceback.format_exc())
         return jsonify({"error": "Error getting remaining messages"}), 500
+
+@app.route("/chat_history/<user_id>", methods=['GET'])
+def get_chat_history_endpoint(user_id):
+    try:
+        print(f"Getting chat history for user: {user_id}")
+        chat_history = get_chat_history(user_id, limit=50)  # Get more messages for the history endpoint
+        
+        # Format for the frontend
+        formatted_history = []
+        for chat in chat_history:
+            formatted_history.append({
+                "userMessage": chat['user'],
+                "aiReply": chat['ai'],
+                "timestamp": chat['timestamp'].timestamp() if chat['timestamp'] else None
+            })
+        
+        return jsonify({
+            "success": True,
+            "history": formatted_history,
+            "count": len(formatted_history)
+        })
+        
+    except Exception as e:
+        print(f"Error getting chat history: {str(e)}")
+        import traceback
+        print(traceback.format_exc())
+        return jsonify({"error": "Error getting chat history"}), 500
+
+@app.route("/clear_chat_history/<user_id>", methods=['DELETE'])
+def clear_chat_history(user_id):
+    try:
+        print(f"Clearing chat history for user: {user_id}")
+        
+        # Get chat documents from Firestore
+        chats_ref = db.collection('chats')
+        query = chats_ref.where('userId', '==', user_id)
+        chat_docs = query.get()
+        
+        # Delete each document
+        count = 0
+        for doc in chat_docs:
+            doc.reference.delete()
+            count += 1
+            
+        print(f"Deleted {count} chat messages for user {user_id}")
+        
+        return jsonify({
+            "success": True,
+            "deleted_count": count,
+            "message": f"Chat history cleared for user {user_id}"
+        })
+        
+    except Exception as e:
+        print(f"Error clearing chat history: {str(e)}")
+        import traceback
+        print(traceback.format_exc())
+        return jsonify({
+            "success": False,
+            "error": "Error clearing chat history"
+        }), 500
 
 if __name__ == "__main__":
     app.run(debug=True, port=8000)
