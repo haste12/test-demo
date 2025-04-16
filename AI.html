@@ -1636,7 +1636,7 @@
 
                 console.log('Sending request to chat API:', message);
                 // Get AI response
-                const response = await fetch('http://127.0.0.1:8000/chat', {
+                const response = await fetch('https://lfu-ai.my/chat', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -1788,8 +1788,8 @@ async function checkRemainingMessages() {
     }
 
     try {
-        console.log('Fetching remaining messages from:', `http://127.0.0.1:8000/remaining_messages/${userId}`);
-        const response = await fetch(`http://127.0.0.1:8000/remaining_messages/${userId}`);
+        console.log('Fetching remaining messages from:', `https://lfu-ai.my/remaining_messages/${userId}`);
+        const response = await fetch(`https://lfu-ai.my/remaining_messages/${userId}`);
         
         if (!response.ok) {
             throw new Error(`HTTP error! status: ${response.status}`);
@@ -1904,7 +1904,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 // If Firebase loading fails, try loading from server API
                 try {
                     console.log('Trying to load chat history from server API...');
-                    const response = await fetch(`http://127.0.0.1:8000/chat_history/${userId}`);
+                    const response = await fetch(`https://lfu-ai.my/chat_history/${userId}`);
                     
                     if (!response.ok) {
                         throw new Error(`API error: ${response.status}`);
@@ -2012,7 +2012,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             // Also try to delete via server API as a backup
             try {
-                const response = await fetch(`http://127.0.0.1:8000/clear_chat_history/${userId}`, {
+                const response = await fetch(`https://lfu-ai.my/clear_chat_history/${userId}`, {
                     method: 'DELETE'
                 });
                 const data = await response.json();

@@ -437,4 +437,10 @@ def clear_chat_history(user_id):
         }), 500
 
 if __name__ == "__main__":
-    app.run(debug=True, port=8000)
+    # Get port from environment variable for Railway
+    port = int(os.environ.get("PORT", 8000))
+    # In production, host should be 0.0.0.0 for Railway
+    host = '0.0.0.0' if os.environ.get("RAILWAY_ENVIRONMENT") else '127.0.0.1'
+    app.run(debug=os.environ.get("DEBUG", "True").lower() == "true", 
+           host=host, 
+           port=port)
