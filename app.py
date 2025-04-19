@@ -8,6 +8,9 @@ from datetime import datetime, timedelta
 from collections import defaultdict
 import firebase_admin
 from firebase_admin import credentials, firestore
+# Add SerpApi for web search
+import requests
+import json
 
 # Load environment variables from .env
 load_dotenv()
@@ -152,6 +155,50 @@ else:
     print("Available environment variables:", os.environ.keys())
     exit(1)
 
+# Set up SerpAPI
+SERP_API_KEY = os.getenv("SERP_API_KEY")
+print(f"SERP API Key found: {'Yes' if SERP_API_KEY else 'No'}")
+
+# Function to search the web using SerpApi
+def search_web(query):
+    try:
+        print(f"Searching the web for: {query}")
+        
+        params = {
+            "engine": "google",
+            "q": query,
+            "api_key": SERP_API_KEY,
+            "num": 5  # Limit to 5 results
+        }
+        
+        # Make the request to SerpApi
+        response = requests.get("https://serpapi.com/search", params=params)
+        
+        if response.status_code != 200:
+            print(f"Error searching the web: {response.status_code}")
+            return None
+            
+        results = response.json()
+        
+        # Extract organic results and format them
+        if "organic_results" in results:
+            formatted_results = []
+            for result in results["organic_results"][:3]:  # Take top 3 results
+                title = result.get("title", "")
+                link = result.get("link", "")
+                snippet = result.get("snippet", "")
+                formatted_results.append(f"{title}\n{snippet}\nSource: {link}\n")
+            
+            # Join the results into a single string
+            search_results = "\n".join(formatted_results)
+            return search_results
+        else:
+            print("No organic results found")
+            return None
+    except Exception as e:
+        print(f"Error searching the web: {str(e)}")
+        return None
+
 # Initialize OpenAI client
 try:
     print("Initializing OpenAI client...")
@@ -290,9 +337,42 @@ def chat():
             bot_reply = response.choices[0].message.content
             print("Bot reply:", bot_reply)
             
+            # Check if the AI is uncertain or doesn't know the answer
+            uncertain_phrases = [
+                "i don't know", "i'm not sure", "i am not sure", 
+                "i do not know", "i don't have information",
+                "i don't have that information", "i don't have access",
+                "i don't have the information", "i cannot provide",
+                "i'm unable to provide", "i am unable to provide"
+            ]
+            
+            is_uncertain = any(phrase in bot_reply.lower() for phrase in uncertain_phrases)
+            
+            # If AI is uncertain, try to search the web
+            if is_uncertain and SERP_API_KEY:
+                print("AI is uncertain, searching the web")
+                search_results = search_web(user_message)
+                
+                if search_results:
+                    # Send the search results to the AI for a better response
+                    print("Got search results, generating new response")
+                    new_messages = messages.copy()
+                    new_messages.append({"role": "assistant", "content": "I'll search for information about that."})
+                    new_messages.append({"role": "user", "content": f"Here are some search results: {search_results}\n\nBased on this information, please answer my original question: {user_message}"})
+                    
+                    new_response = openai_client.chat.completions.create(
+                        model="gpt-3.5-turbo",
+                        messages=new_messages
+                    )
+                    
+                    bot_reply = new_response.choices[0].message.content
+            
             # Clean up response using replacements from prompt.py
             for old_text, new_text in REPLACEMENTS.items():
                 bot_reply = bot_reply.replace(old_text, new_text)
+
+            # Store the chat in Firebase
+            store_chat(user_id, user_message, bot_reply)
 
             return jsonify({
                 "reply": bot_reply,
@@ -306,6 +386,23 @@ def chat():
     except Exception as e:
         print(f"Server error: {str(e)}")
         return jsonify({"error": f"Server error: {str(e)}"}), 500
+
+# Function to store chat in Firebase
+def store_chat(user_id, user_message, ai_reply):
+    try:
+        chats_ref = db.collection('chats')
+        chat_data = {
+            'userId': user_id,
+            'userMessage': user_message,
+            'aiReply': ai_reply,
+            'timestamp': datetime.now()
+        }
+        chats_ref.add(chat_data)
+        print(f"Chat stored in Firebase for user: {user_id}")
+    except Exception as e:
+        print(f"Error storing chat: {str(e)}")
+        # Don't fail the request if storage fails
+        pass
 
 @app.route("/remaining_messages/<user_id>", methods=['GET'])
 def get_remaining_messages(user_id):
