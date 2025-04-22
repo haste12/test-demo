@@ -47,11 +47,13 @@ CORS(app, resources={
             "http://localhost:5173",
             "http://localhost:3000",
             "http://localhost:8000",
+            "http://localhost:5000",
             "http://127.0.0.1:5500",
             "http://127.0.0.1:5502",
             "http://127.0.0.1:5173",
             "http://127.0.0.1:3000",
-            "http://127.0.0.1:8000"
+            "http://127.0.0.1:8000",
+            "http://127.0.0.1:5000"
         ],
         "methods": ["GET", "POST", "OPTIONS"],
         "allow_headers": ["Content-Type"]
@@ -438,7 +440,7 @@ def clear_chat_history(user_id):
 
 if __name__ == "__main__":
     # Get port from environment variable for Railway
-    port = int(os.environ.get("PORT", 8000))
+    port = int(os.environ.get("PORT", 5000))
     # In production, host should be 0.0.0.0 for Railway
     host = '0.0.0.0' if os.environ.get("RAILWAY_ENVIRONMENT") else '127.0.0.1'
     app.run(debug=os.environ.get("DEBUG", "True").lower() == "true", 
