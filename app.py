@@ -8,6 +8,9 @@ from datetime import datetime, timedelta
 from collections import defaultdict
 import firebase_admin
 from firebase_admin import credentials, firestore
+import smtplib
+from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
 
 # Load environment variables from .env
 load_dotenv()
@@ -436,6 +439,106 @@ def clear_chat_history(user_id):
         return jsonify({
             "success": False,
             "error": "Error clearing chat history"
+        }), 500
+
+@app.route("/submit_feedback", methods=['POST'])
+def submit_feedback():
+    try:
+        print("Received feedback submission")
+        
+        if not request.is_json:
+            print("Error: Request is not JSON")
+            return jsonify({"error": "Request must be JSON"}), 400
+        
+        data = request.get_json()
+        print("Parsed feedback data:", data)
+        
+        # Extract feedback data
+        name = data.get('name', 'Anonymous')
+        email = data.get('email', 'No email provided')
+        message = data.get('message', '')
+        user_id = data.get('userId', 'Not logged in')
+        
+        if not message:
+            return jsonify({"error": "Feedback message is required"}), 400
+            
+        # Store feedback in Firestore
+        feedback_ref = db.collection('feedback').document()
+        feedback_ref.set({
+            'name': name,
+            'email': email,
+            'message': message,
+            'userId': user_id,
+            'timestamp': firestore.SERVER_TIMESTAMP
+        })
+        
+        # Send feedback via email
+        try:
+            # Email details - you would need to set up email credentials in environment variables
+            receiver_email = "lfuai2025@gmail.com"
+            subject = f"New Feedback from {name}"
+            
+            # Create email content
+            email_content = f"""
+            <html>
+            <body>
+                <h2>New Feedback Received</h2>
+                <p><strong>From:</strong> {name}</p>
+                <p><strong>Email:</strong> {email}</p>
+                <p><strong>User ID:</strong> {user_id}</p>
+                <p><strong>Message:</strong></p>
+                <p>{message}</p>
+                <p><em>Sent from LFU AI Feedback Form</em></p>
+            </body>
+            </html>
+            """
+            
+            # For demonstration purposes, just log that we would send an email
+            # In production, you would configure a proper email sending service
+            print(f"Would send email to {receiver_email}:")
+            print(f"Subject: {subject}")
+            print(f"Content: {email_content}")
+            
+            # Note: To actually send emails, you would need to configure SMTP settings
+            # Uncomment the following code and set up your email credentials in environment variables:
+            # SMTP_SERVER, SMTP_PORT, SMTP_USERNAME, SMTP_PASSWORD
+            
+            smtp_server = os.getenv("SMTP_SERVER")
+            smtp_port = int(os.getenv("SMTP_PORT", 587))
+            smtp_username = os.getenv("SMTP_USERNAME")
+            smtp_password = os.getenv("SMTP_PASSWORD")
+            
+            msg = MIMEMultipart()
+            msg['From'] = smtp_username
+            msg['To'] = receiver_email
+            msg['Subject'] = subject
+            msg.attach(MIMEText(email_content, 'html'))
+            
+            with smtplib.SMTP(smtp_server, smtp_port) as server:
+                server.starttls()
+                server.login(smtp_username, smtp_password)
+                server.send_message(msg)
+            
+            return jsonify({
+                "success": True,
+                "message": "Feedback submitted successfully"
+            })
+            
+        except Exception as email_error:
+            print(f"Error sending feedback email: {str(email_error)}")
+            # Still return success since we stored in Firestore
+            return jsonify({
+                "success": True,
+                "message": "Feedback saved but email notification failed"
+            })
+        
+    except Exception as e:
+        print(f"Error submitting feedback: {str(e)}")
+        import traceback
+        print(traceback.format_exc())
+        return jsonify({
+            "success": False,
+            "error": "Error submitting feedback"
         }), 500
 
 if __name__ == "__main__":
