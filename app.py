@@ -11,6 +11,8 @@ from firebase_admin import credentials, firestore
 import smtplib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
+import requests
+import json
 
 # Load environment variables from .env
 load_dotenv()
@@ -157,6 +159,16 @@ else:
     print("Available environment variables:", os.environ.keys())
     exit(1)
 
+# Check for SERP API key
+serp_api_key = os.getenv("SERP_API_KEY")
+if serp_api_key:
+    serp_api_key = serp_api_key.strip().strip('"').strip("'").strip('"').strip("'")
+    print(f"SERP API Key found: Yes")
+    print(f"SERP API Key length: {len(serp_api_key)}")
+    print(f"SERP API Key starts with: {serp_api_key[:4]}...")
+else:
+    print("WARNING: SERP API key not found in environment variables. Web search functionality will be disabled.")
+
 # Initialize OpenAI client
 try:
     print("Initializing OpenAI client...")
@@ -180,6 +192,68 @@ def ai_page():
 @app.route("/<path:filename>")
 def serve_file(filename):
     return send_from_directory('.', filename)
+
+# Web search function using SERP API
+def search_web(query):
+    """
+    Search the web using SERP API and return relevant information
+    
+    Args:
+        query (str): The search query
+        
+    Returns:
+        str: Formatted search results or error message
+    """
+    try:
+        print(f"Searching the web for: {query}")
+        
+        if not serp_api_key:
+            return "Web search is currently unavailable due to missing API key."
+        
+        # SERP API endpoint
+        url = "https://serpapi.com/search"
+        
+        # Request parameters
+        params = {
+            "engine": "google",
+            "q": query,
+            "api_key": serp_api_key,
+            "num": 5  # Limit to 5 results for conciseness
+        }
+        
+        # Make the request
+        response = requests.get(url, params=params)
+        
+        # Check if the request was successful
+        if response.status_code == 200:
+            data = response.json()
+            
+            # Extract organic results
+            organic_results = data.get("organic_results", [])
+            
+            if not organic_results:
+                return "No relevant information found on the web for this query."
+            
+            # Format the results
+            formatted_results = "Here's what I found on the web:\n\n"
+            
+            for i, result in enumerate(organic_results, 1):
+                title = result.get("title", "No title")
+                link = result.get("link", "No link")
+                snippet = result.get("snippet", "No description available")
+                
+                formatted_results += f"{i}. {title}\n"
+                formatted_results += f"   {snippet}\n"
+                formatted_results += f"   Source: {link}\n\n"
+            
+            return formatted_results
+        else:
+            print(f"SERP API error: {response.status_code}, {response.text}")
+            return "Sorry, I couldn't search the web right now due to a technical issue."
+            
+    except Exception as e:
+        print(f"Error in web search: {str(e)}")
+        return "Sorry, I encountered an error while searching the web."
 
 # Get chat history for a user from Firebase
 def get_chat_history(user_id, limit=MAX_HISTORY_MESSAGES):
@@ -213,6 +287,75 @@ def get_chat_history(user_id, limit=MAX_HISTORY_MESSAGES):
         import traceback
         print(traceback.format_exc())
         return []
+
+# Function to determine if a query is about other universities, not LFU
+def is_about_other_university(message):
+    """Check if the message is about universities other than LFU."""
+    # Convert message to lowercase for case-insensitive matching
+    message_lower = message.lower()
+    
+    # Define keywords that might indicate the query is about other universities
+    # Exclude LFU (Lebanese French University) references
+    other_university_keywords = [
+        "university", "college", "campus", "academic", "faculty", "professor", 
+        "student", "degree", "bachelor", "master", "phd", "major", "minor",
+        "course", "class", "lecture", "semester", "education", "school"
+    ]
+    
+    lfu_keywords = [
+        "lebanese french university", "lfu", "lebanese-french", "lebanese french"
+    ]
+    
+    # Check if message contains university-related terms but not specifically about LFU
+    has_university_terms = any(keyword in message_lower for keyword in other_university_keywords)
+    about_lfu = any(keyword in message_lower for keyword in lfu_keywords)
+    
+    # Return True if it mentions university terms but not specifically LFU
+    return has_university_terms and not about_lfu
+
+# Function to check if AI needs to search the web
+def should_search_web(message, bot_reply):
+    """
+    Determine if we should search the web based on the message and AI's initial reply
+    
+    Args:
+        message (str): User's message
+        bot_reply (str): AI's initial reply
+        
+    Returns:
+        bool: True if web search should be performed
+    """
+    # Convert both to lowercase for case-insensitive matching
+    message_lower = message.lower()
+    reply_lower = bot_reply.lower()
+    
+    # Check for phrases indicating AI doesn't know
+    uncertainty_phrases = [
+        "i don't know", "i do not know", "i'm not sure", "i am not sure", 
+        "i don't have information", "i do not have information",
+        "i don't have access", "i do not have access", 
+        "i can't provide", "i cannot provide",
+        "i don't have enough information", "i do not have enough information",
+        "my knowledge is limited", "my information is limited",
+        "my training data", "my training doesn't", "my training does not"
+    ]
+    
+    # Return True if:
+    # 1. AI's reply indicates uncertainty
+    # 2. The query is about other universities (not LFU)
+    # 3. The query is not a simple greeting
+    
+    # Check for uncertainty in AI's reply
+    is_uncertain = any(phrase in reply_lower for phrase in uncertainty_phrases)
+    
+    # Check if it's a simple greeting (no need to search web for these)
+    simple_greeting = message_lower in ["hello", "hi", "hey", "greetings", "good morning", "good afternoon", "good evening"]
+    
+    # Check if about other universities
+    about_other_uni = is_about_other_university(message)
+    
+    # If the message is about other universities OR the AI is uncertain (but not a simple greeting)
+    return (is_uncertain or about_other_uni) and not simple_greeting
 
 @app.route("/chat", methods=['POST'])
 def chat():
@@ -283,7 +426,7 @@ def chat():
         
         print(f"Sending {len(messages)} messages to OpenAI")
 
-        # Get AI response
+        # Get initial AI response
         try:
             print("Sending request to OpenAI")
             response = openai_client.chat.completions.create(
@@ -293,11 +436,38 @@ def chat():
             print("Received response from OpenAI")
             
             bot_reply = response.choices[0].message.content
-            print("Bot reply:", bot_reply)
+            print("Initial bot reply:", bot_reply)
+            
+            # Check if we should search the web
+            if should_search_web(user_message, bot_reply):
+                print("AI doesn't know or query is about other universities, searching the web...")
+                web_results = search_web(user_message)
+                
+                # Add web results to messages and get new response
+                messages.append({"role": "assistant", "content": bot_reply})
+                messages.append({"role": "user", "content": "Please use this information to answer my question: " + web_results})
+                
+                # Get new response with web search results
+                response = openai_client.chat.completions.create(
+                    model="gpt-3.5-turbo",
+                    messages=messages
+                )
+                
+                bot_reply = response.choices[0].message.content
+                print("Bot reply after web search:", bot_reply)
             
             # Clean up response using replacements from prompt.py
             for old_text, new_text in REPLACEMENTS.items():
                 bot_reply = bot_reply.replace(old_text, new_text)
+            
+            # Store the conversation in Firebase
+            chat_ref = db.collection('chats').document()
+            chat_ref.set({
+                'userId': user_id,
+                'userMessage': user_message,
+                'aiReply': bot_reply,
+                'timestamp': firestore.SERVER_TIMESTAMP
+            })
 
             return jsonify({
                 "reply": bot_reply,
