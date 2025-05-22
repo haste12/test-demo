@@ -73,7 +73,7 @@ MAX_HISTORY_MESSAGES = 10  # Maximum number of previous messages to include
 def check_and_update_message_limit(user_id):
     try:
         print(f"Checking message limit for user: {user_id}")
-        # Get user data from Firebase
+   
         user_ref = db.collection('users').document(user_id)
         user_doc = user_ref.get()
         
@@ -85,27 +85,27 @@ def check_and_update_message_limit(user_id):
         print(f"User data: {user_data}")
         current_time = datetime.now()
         
-        # Check if user is suspended
+        
         if user_data.get('suspended', False):
             print(f"User is suspended: {user_id}")
             return False, "Your account is suspended"
             
-        # Get daily limit (null/None means unlimited)
+       
         daily_limit = user_data.get('dailyLimit')
         print(f"Daily limit: {daily_limit}")
         if daily_limit is None:
             return True, "No message limit (Unlimited)"
             
-        # Get last reset time
+        
         last_reset = user_data.get('lastResetTime', current_time).timestamp()
         last_reset_dt = datetime.fromtimestamp(last_reset)
         print(f"Last reset: {last_reset_dt}, Current time: {current_time}")
         
-        # Reset count if 24 hours have passed
+       
         if current_time - last_reset_dt >= RESET_INTERVAL:
             print(f"Resetting message count for user: {user_id}")
             user_ref.update({
-                'messageCount': 1,  # First message of new period
+                'messageCount': 1,  
                 'lastResetTime': current_time
             })
             message_count = 1
@@ -113,7 +113,7 @@ def check_and_update_message_limit(user_id):
             message_count = user_data.get('messageCount', 0) + 1
             print(f"Incrementing message count to: {message_count}")
             
-        # Check if user has exceeded their limit
+      
         if message_count > daily_limit:
             time_until_reset = last_reset_dt + RESET_INTERVAL - current_time
             hours, remainder = divmod(int(time_until_reset.total_seconds()), 3600)
@@ -121,15 +121,15 @@ def check_and_update_message_limit(user_id):
             print(f"User {user_id} has exceeded limit. Reset in {hours}h {minutes}m")
             return False, f"Message limit reached. Your limit will reset in {hours}h {minutes}m"
             
-        # Increment message count
+       
         user_ref.update({
             'messageCount': message_count
         })
         
-        # Calculate remaining messages
+       
         remaining_messages = daily_limit - message_count
         
-        # Calculate time until reset
+     
         time_until_reset = last_reset_dt + RESET_INTERVAL - current_time
         hours, remainder = divmod(int(time_until_reset.total_seconds()), 3600)
         minutes, _ = divmod(remainder, 60)
@@ -148,7 +148,7 @@ def check_and_update_message_limit(user_id):
 print("Checking for OpenAI API key...")
 api_key = os.getenv("OPENAI_API_KEY")
 if api_key:
-    # Remove any type of quotes and whitespace
+    
     api_key = api_key.strip().strip('"').strip("'").strip('"').strip("'")
     print(f"API Key found: Yes")
     print(f"API Key length: {len(api_key)}")
@@ -159,7 +159,7 @@ else:
     print("Available environment variables:", os.environ.keys())
     exit(1)
 
-# Check for SERP API key
+
 serp_api_key = os.getenv("SERP_API_KEY")
 if serp_api_key:
     serp_api_key = serp_api_key.strip().strip('"').strip("'").strip('"').strip("'")
@@ -169,7 +169,7 @@ if serp_api_key:
 else:
     print("WARNING: SERP API key not found in environment variables. Web search functionality will be disabled.")
 
-# Initialize OpenAI client
+
 try:
     print("Initializing OpenAI client...")
     openai_client = openai.OpenAI(api_key=api_key)
@@ -178,7 +178,7 @@ except Exception as e:
     print(f"ERROR initializing OpenAI client: {str(e)}")
     print(f"Error type: {type(e)}")
     print(f"Error args: {e.args}")
-    print(f"API Key being used: {api_key}")  # This will help us debug
+    print(f"API Key being used: {api_key}")  
     exit(1)
 
 @app.route("/", methods=['GET'])
@@ -221,20 +221,20 @@ def search_web(query):
             "num": 5  # Limit to 5 results for conciseness
         }
         
-        # Make the request
+       
         response = requests.get(url, params=params)
         
-        # Check if the request was successful
+       
         if response.status_code == 200:
             data = response.json()
             
-            # Extract organic results
+       
             organic_results = data.get("organic_results", [])
             
             if not organic_results:
                 return "No relevant information found on the web for this query."
             
-            # Format the results
+        
             formatted_results = "Here's what I found on the web:\n\n"
             
             for i, result in enumerate(organic_results, 1):
@@ -255,21 +255,20 @@ def search_web(query):
         print(f"Error in web search: {str(e)}")
         return "Sorry, I encountered an error while searching the web."
 
-# Get chat history for a user from Firebase
 def get_chat_history(user_id, limit=MAX_HISTORY_MESSAGES):
     try:
         print(f"Getting chat history for user: {user_id}, limit: {limit}")
-        # Get chat history from Firebase
+        
         chats_ref = db.collection('chats')
         query = chats_ref.where('userId', '==', user_id).order_by('timestamp', direction=firestore.Query.DESCENDING).limit(limit)
         
         chat_docs = query.get()
         
-        # Convert to list and reverse to get chronological order
+        
         chat_history = []
         for doc in chat_docs:
             chat_data = doc.to_dict()
-            # Only add if both messages are present
+            
             if 'userMessage' in chat_data and 'aiReply' in chat_data:
                 chat_history.append({
                     'user': chat_data['userMessage'],
@@ -277,7 +276,7 @@ def get_chat_history(user_id, limit=MAX_HISTORY_MESSAGES):
                     'timestamp': chat_data.get('timestamp', None)
                 })
         
-        # Reverse to get chronological order (oldest first)
+      
         chat_history.reverse()
         print(f"Retrieved {len(chat_history)} history messages")
         return chat_history
@@ -288,14 +287,11 @@ def get_chat_history(user_id, limit=MAX_HISTORY_MESSAGES):
         print(traceback.format_exc())
         return []
 
-# Function to determine if a query is about other universities, not LFU
 def is_about_other_university(message):
     """Check if the message is about universities other than LFU."""
-    # Convert message to lowercase for case-insensitive matching
+ 
     message_lower = message.lower()
     
-    # Define keywords that might indicate the query is about other universities
-    # Exclude LFU (Lebanese French University) references
     other_university_keywords = [
         "university", "college", "campus", "academic", "faculty", "professor", 
         "student", "degree", "bachelor", "master", "phd", "major", "minor",
@@ -306,14 +302,14 @@ def is_about_other_university(message):
         "lebanese french university", "lfu", "lebanese-french", "lebanese french"
     ]
     
-    # Check if message contains university-related terms but not specifically about LFU
+  
     has_university_terms = any(keyword in message_lower for keyword in other_university_keywords)
     about_lfu = any(keyword in message_lower for keyword in lfu_keywords)
     
-    # Return True if it mentions university terms but not specifically LFU
+ 
     return has_university_terms and not about_lfu
 
-# Function to check if AI needs to search the web
+
 def should_search_web(message, bot_reply):
     """
     Determine if we should search the web based on the message and AI's initial reply
@@ -325,11 +321,11 @@ def should_search_web(message, bot_reply):
     Returns:
         bool: True if web search should be performed
     """
-    # Convert both to lowercase for case-insensitive matching
+  
     message_lower = message.lower()
     reply_lower = bot_reply.lower()
     
-    # Check for phrases indicating AI doesn't know
+  
     uncertainty_phrases = [
         "i don't know", "i do not know", "i'm not sure", "i am not sure", 
         "i don't have information", "i do not have information",
@@ -340,21 +336,17 @@ def should_search_web(message, bot_reply):
         "my training data", "my training doesn't", "my training does not"
     ]
     
-    # Return True if:
-    # 1. AI's reply indicates uncertainty
-    # 2. The query is about other universities (not LFU)
-    # 3. The query is not a simple greeting
+
     
-    # Check for uncertainty in AI's reply
+
     is_uncertain = any(phrase in reply_lower for phrase in uncertainty_phrases)
-    
-    # Check if it's a simple greeting (no need to search web for these)
+ 
     simple_greeting = message_lower in ["hello", "hi", "hey", "greetings", "good morning", "good afternoon", "good evening"]
     
-    # Check if about other universities
+ 
     about_other_uni = is_about_other_university(message)
     
-    # If the message is about other universities OR the AI is uncertain (but not a simple greeting)
+
     return (is_uncertain or about_other_uni) and not simple_greeting
 
 @app.route("/chat", methods=['POST'])
@@ -375,7 +367,7 @@ def chat():
             print("Error: No message in data")
             return jsonify({"error": "No message provided"}), 400
 
-        # Check for user ID
+   
         user_id = data.get('userId')
         if not user_id:
             return jsonify({"error": "User ID is required"}), 400
