@@ -22,6 +22,7 @@
                 <li>Click on the verification link in the email</li>
             </ol>
             <br>
+            <p id="verificationStatus" style="font-weight:500;">Waiting for verification...</p>
             <div class="actions">
                 <button id="resendVerification" class="btn">Resend Verification Email</button>
                 <br>
@@ -30,46 +31,6 @@
             </div>
         </div>
     </div>
-
-    <script type="module">
-        import { getAuth, sendEmailVerification } from "https://www.gstatic.com/firebasejs/10.11.1/firebase-auth.js";
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.11.1/firebase-app.js";
-
-        // Your Firebase configuration
-        const firebaseConfig = {
-            apiKey: "AIzaSyAjwt0a3WwFZh3ka6up3MDwMmdlkQzs34k",
-            authDomain: "login-form-96501.firebaseapp.com",
-            projectId: "login-form-96501",
-            storageBucket: "login-form-96501.appspot.com",
-            messagingSenderId: "5088309189",
-            appId: "1:5088309189:web:5f331dec8180376217a5ac"
-        };
-
-        // Initialize Firebase
-        initializeApp(firebaseConfig);
-
-        document.getElementById('resendVerification')?.addEventListener('click', () => {
-            const auth = getAuth();
-            const user = auth.currentUser;
-            
-            if (user) {
-                sendEmailVerification(user)
-                .then(() => {
-                    alert('Verification email sent again!');
-                })
-                .catch((error) => {
-                    console.error('Error sending verification email', error);
-                    alert('Failed to send verification email. Please try again.');
-                });
-            } else {
-                alert('No user is currently signed in.');
-                window.location.href = 'index.html';
-            }
-        });
-
-        document.getElementById('backToLogin')?.addEventListener('click', () => {
-            window.location.href = 'index.html';
-        });
-    </script>
+    <script type="module" src="verify-email.js"></script>
 </body>
 </html>

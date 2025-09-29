@@ -4,7 +4,6 @@ import {
     getAuth, 
     createUserWithEmailAndPassword, 
     signInWithEmailAndPassword, 
-    sendEmailVerification, 
     sendPasswordResetEmail 
 } from "https://www.gstatic.com/firebasejs/10.11.1/firebase-auth.js";
 import { 
@@ -50,6 +49,7 @@ function showMessage(message, divId, duration = 5000, isSuccess = false){
     }, duration);
 }
 
+
 // Save message to Firestore
 async function saveMessageToFirestore(userId, message, reply) {
     const db = getFirestore();
@@ -79,30 +79,20 @@ signUp?.addEventListener('click', (event) => {
     const db = getFirestore();
 
     createUserWithEmailAndPassword(auth, email, password)
-    .then((userCredential) => {
+    .then(async (userCredential) => {
         const user = userCredential.user;
-        
-        // Send email verification
-        return sendEmailVerification(user).then(async () => {
-            // Create user data object
-            const userData = {
-                email: email,
-                firstName: firstName,
-                lastName: lastName,
-                emailVerified: false,
-                messageCount: 0,
-                lastMessageTime: serverTimestamp(),
-                lastResetTime: serverTimestamp(),
-                dailyLimit: 10,  // Default message limit
-                suspended: false
-            };
-
-            // Save user data to Firestore (single write operation)
-            const userDocRef = doc(db, "users", user.uid);
-            await setDoc(userDocRef, userData);
-
-            return user;
-        });
+        const userData = {
+            email, firstName, lastName,
+            // emailVerified retained for compatibility but now always considered true
+            emailVerified: true,
+            messageCount: 0,
+            lastMessageTime: serverTimestamp(),
+            lastResetTime: serverTimestamp(),
+            dailyLimit: 10,
+            suspended: false
+        };
+        await setDoc(doc(db, 'users', user.uid), userData);
+        return user;
     })
     .then(() => {
         showMessage('Account Created. Please check your email for verification.', 'signUpMessage', 7000, true);
@@ -131,26 +121,11 @@ signIn?.addEventListener('click', (event) => {
     const auth = getAuth();
 
     signInWithEmailAndPassword(auth, email, password)
-    .then((userCredential) => {
+    .then(async (userCredential) => {
         const user = userCredential.user;
-        
-        if (user.emailVerified) {
-            showMessage('Login is successful', 'signInMessage', 3000, true);
-            localStorage.setItem('loggedInUserId', user.uid);
-            window.location.href = 'homepage.html';
-        } else {
-            // Prevent login and show verification needed message
-            showMessage('Please verify your email before logging in. Check your inbox or spam folder.', 'signInMessage', 7000);
-            
-            // Optionally, resend verification email
-            sendEmailVerification(user)
-            .then(() => {
-                console.log('Verification email resent');
-            })
-            .catch((error) => {
-                console.error('Error resending verification email', error);
-            });
-        }
+        showMessage('Login is successful', 'signInMessage', 3000, true);
+        localStorage.setItem('loggedInUserId', user.uid);
+        window.location.href = 'homepage.html';
     })
     .catch((error) => {
         const errorCode = error.code;
@@ -172,7 +147,8 @@ function sendPasswordReset(email) {
     }
     
     const actionCodeSettings = {
-        url: window.location.origin + '/login.html',
+        // Redirect back to index after password reset confirmation
+        url: window.location.origin + '/index.html',
         handleCodeInApp: false
     };
     
@@ -242,6 +218,8 @@ if (forgotPasswordBtn) {
 } else {
 
 }
+
+// Email verification removed: resend button intentionally disabled
 
 // Export the saveMessageToFirestore function to use in other scripts
 export { saveMessageToFirestore };

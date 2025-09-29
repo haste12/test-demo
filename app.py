@@ -13,6 +13,7 @@ from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 import requests
 import json
+from urllib.parse import quote_plus
 
 # Load environment variables from .env
 load_dotenv()
@@ -169,6 +170,13 @@ if serp_api_key:
 else:
     print("WARNING: SERP API key not found in environment variables. Web search functionality will be disabled.")
 
+# NASA API key (https://api.nasa.gov) – allows fetching up-to-date space / astronomy data
+NASA_API_KEY = os.getenv("NASA_API_KEY", "DEMO_KEY").strip()
+if NASA_API_KEY == "DEMO_KEY":
+    print("WARNING: Using NASA DEMO_KEY which is heavily rate-limited. Set NASA_API_KEY in environment for production.")
+else:
+    print("NASA API key loaded.")
+
 
 try:
     print("Initializing OpenAI client...")
@@ -254,6 +262,84 @@ def search_web(query):
     except Exception as e:
         print(f"Error in web search: {str(e)}")
         return "Sorry, I encountered an error while searching the web."
+
+# ---------------- NASA INTEGRATION ---------------- #
+def is_nasa_query(message: str) -> bool:
+    """Heuristic to decide if the user wants NASA / space data that benefits from real-time API calls."""
+    msg = message.lower()
+    keywords = [
+        "nasa", "space", "galaxy", "astronomy", "apod", "picture of the day", "mars rover", "perseverance",
+        "curiosity", "opportunity", "ingenuity", "neo", "asteroid", "asteroids", "near earth object",
+        "iss position", "international space station", "planet positions", "space news"
+    ]
+    # If explicitly asks for today's / latest photo or rover photos
+    temporal = ["today", "latest", "current", str(datetime.now().year)]
+    return any(k in msg for k in keywords) or ("mars" in msg and any(t in msg for t in temporal))
+
+def fetch_nasa_data(user_message: str) -> dict:
+    """Fetch relevant NASA data based on the content of the user message.
+
+    Returns a dict with keys: 'summary' (string for LLM context) and 'sources' (list of URLs)
+    """
+    results = {"summary": "", "sources": []}
+    try:
+        base_params = {"api_key": NASA_API_KEY}
+        lower = user_message.lower()
+
+        # Priority: APOD if asking for picture/photo of the day
+        if any(p in lower for p in ["apod", "picture of the day", "astronomy picture", "space photo", "today's picture"]):
+            apod_url = "https://api.nasa.gov/planetary/apod"
+            r = requests.get(apod_url, params=base_params, timeout=10)
+            if r.status_code == 200:
+                data = r.json()  
+                explanation = data.get("explanation", "")[:800]
+                results["summary"] += f"Astronomy Picture of the Day (APOD) Title: {data.get('title')} Date: {data.get('date')} Explanation: {explanation} Media: {data.get('url')}\n"
+                results["sources"].append(apod_url)
+
+        # Mars rover photos if query mentions rover / mars
+        if any(k in lower for k in ["mars", "rover", "perseverance", "curiosity", "opportunity"]):
+            # Use Perseverance latest photos endpoint
+            mars_url = "https://api.nasa.gov/mars-photos/api/v1/rovers/perseverance/latest_photos"
+            r = requests.get(mars_url, params=base_params, timeout=10)
+            if r.status_code == 200:
+                data = r.json()
+                photos = data.get("latest_photos", [])[:3]
+                if photos:
+                    photo_summaries = []
+                    for p in photos:
+                        photo_summaries.append(
+                            f"Camera {p.get('camera',{}).get('full_name')} on {p.get('earth_date')} -> {p.get('img_src')}"
+                        )
+                    results["summary"] += "Latest Perseverance Rover Photos (top 3): " + " | ".join(photo_summaries) + "\n"
+                    results["sources"].append(mars_url)
+
+        # Near-Earth Objects if asking about asteroid / NEO
+        if any(k in lower for k in ["neo", "asteroid", "asteroids", "near earth object"]):
+            neo_url = "https://api.nasa.gov/neo/rest/v1/feed"
+            # Use today's date
+            today = datetime.utcnow().strftime('%Y-%m-%d')
+            params = {**base_params, "start_date": today, "end_date": today}
+            r = requests.get(neo_url, params=params, timeout=10)
+            if r.status_code == 200:
+                data = r.json()
+                neos = data.get('near_earth_objects', {}).get(today, [])[:5]
+                if neos:
+                    neo_lines = []
+                    for n in neos:
+                        est = n.get('estimated_diameter', {}).get('meters', {})
+                        diam = f"{est.get('estimated_diameter_min',0):.1f}-{est.get('estimated_diameter_max',0):.1f}m"
+                        haz = 'Potentially Hazardous' if n.get('is_potentially_hazardous_asteroid') else 'Not Hazardous'
+                        neo_lines.append(f"{n.get('name')} ({diam}, {haz})")
+                    results["summary"] += "Today's Near-Earth Objects (sample): " + "; ".join(neo_lines) + "\n"
+                    results["sources"].append(neo_url)
+
+        if not results["summary"]:
+            results["summary"] = "No specific NASA dataset matched, but user requested space/NASA info."
+        return results
+    except Exception as e:
+        print(f"Error fetching NASA data: {e}")
+        results["summary"] = "Encountered an error while fetching live NASA data."
+        return results
 
 def get_chat_history(user_id, limit=MAX_HISTORY_MESSAGES):
     try:
@@ -416,43 +502,49 @@ def chat():
         # Add current message
         messages.append({"role": "user", "content": user_message})
         
-        print(f"Sending {len(messages)} messages to OpenAI")
+        print(f"Sending {len(messages)} base messages to OpenAI (pre NASA/web augmentation check)")
 
-        # Get initial AI response
+        # Optional NASA data injection BEFORE first model call to ground answer with fresh data
+        nasa_context = None
+        if is_nasa_query(user_message):
+            print("Detected NASA-related query. Fetching NASA data...")
+            nasa_data = fetch_nasa_data(user_message)
+            nasa_context = f"Live NASA Data (fetched {datetime.utcnow().isoformat()}Z):\n{nasa_data['summary']}\nSources: " + ", ".join(set(nasa_data['sources']))
+            messages.append({"role": "user", "content": "Use the following live NASA data while answering: " + nasa_context})
+            print("NASA data appended to prompt.")
+
+        # First AI response (already has NASA context if relevant)
         try:
-            print("Sending request to OpenAI")
+            print("Sending initial request to OpenAI (with any NASA context)")
             response = openai_client.chat.completions.create(
                 model="gpt-3.5-turbo",
                 messages=messages
             )
-            print("Received response from OpenAI")
-            
             bot_reply = response.choices[0].message.content
-            print("Initial bot reply:", bot_reply)
-            
-            # Check if we should search the web
+            print("Initial bot reply received.")
+
+            # If uncertain or about other universities, perform web search augmentation
             if should_search_web(user_message, bot_reply):
-                print("AI doesn't know or query is about other universities, searching the web...")
+                print("Uncertain / other university query. Performing web search augmentation...")
                 web_results = search_web(user_message)
-                
-                # Add web results to messages and get new response
                 messages.append({"role": "assistant", "content": bot_reply})
-                messages.append({"role": "user", "content": "Please use this information to answer my question: " + web_results})
-                
-                # Get new response with web search results
+                messages.append({"role": "user", "content": "Incorporate these web search findings (cite sources): " + web_results})
                 response = openai_client.chat.completions.create(
                     model="gpt-3.5-turbo",
                     messages=messages
                 )
-                
                 bot_reply = response.choices[0].message.content
-                print("Bot reply after web search:", bot_reply)
-            
-            # Clean up response using replacements from prompt.py
+                print("Bot reply after web augmentation ready.")
+
+            # If NASA context was used but not referenced, gently append a citation note
+            if nasa_context and "nasa" not in bot_reply.lower():
+                bot_reply += "\n\n(Answer informed by current NASA data.)"
+
+            # Branding replacements
             for old_text, new_text in REPLACEMENTS.items():
                 bot_reply = bot_reply.replace(old_text, new_text)
-            
-            # Store the conversation in Firebase
+
+            # Persist conversation
             chat_ref = db.collection('chats').document()
             chat_ref.set({
                 'userId': user_id,
@@ -463,9 +555,10 @@ def chat():
 
             return jsonify({
                 "reply": bot_reply,
-                "remaining_messages": limit_message
+                "remaining_messages": limit_message,
+                "nasa_used": bool(nasa_context)
             })
-            
+
         except Exception as api_error:
             print(f"AI API error: {str(api_error)}")
             return jsonify({"error": f"OpenAI API error: {str(api_error)}"}), 500
