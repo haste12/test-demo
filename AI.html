@@ -1460,6 +1460,127 @@
             transition: all 0.2s ease;
         }
 
+        /* Professional Welcome Greeting Styles */
+        .welcome-greeting {
+            position: absolute;
+            top: 190px;
+            left: 350px;
+            right: 0;
+            bottom: 80px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 10;
+        }
+
+        .greeting-card {
+            text-align: center;
+            max-width: 520px;
+            width: 100%;
+            padding: 48px 40px;
+        }
+
+        .greeting-icon {
+            background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+            width: 80px;
+            height: 80px;
+            border-radius: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 32px;
+            box-shadow: 0 8px 24px rgba(59, 130, 246, 0.4);
+        }
+
+        .greeting-icon i {
+            font-size: 36px;
+            color: white;
+        }
+
+        .greeting-title {
+            font-size: 32px;
+            font-weight: 700;
+            background: linear-gradient(135deg, #ffffff 0%, #e2e8f0 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin: 0 0 16px 0;
+            line-height: 1.2;
+        }
+
+        .greeting-subtitle {
+            font-size: 16px;
+            color: #94a3b8;
+            line-height: 1.6;
+            margin: 0 0 24px 0;
+            font-weight: 400;
+        }
+
+        .greeting-accent {
+            width: 60px;
+            height: 4px;
+            background: linear-gradient(90deg, #3b82f6 0%, #1d4ed8 100%);
+            border-radius: 2px;
+            margin: 0 auto;
+        }
+
+        /* Responsive adjustments for greeting */
+        @media screen and (max-width: 992px) {
+            .welcome-greeting {
+                left: 70px;
+            }
+        }
+
+        @media screen and (max-width: 768px) {
+            .welcome-greeting {
+                top: 60px;
+                left: 0;
+                right: 0;
+                bottom: 80px;
+            }
+
+            .greeting-card {
+                padding: 36px 28px;
+            }
+
+            .greeting-icon {
+                width: 64px;
+                height: 64px;
+                margin-bottom: 24px;
+            }
+
+            .greeting-icon i {
+                font-size: 28px;
+            }
+
+            .greeting-title {
+                font-size: 26px;
+            }
+
+            .greeting-subtitle {
+                font-size: 14px;
+            }
+        }
+
+        @media screen and (max-width: 480px) {
+            .welcome-greeting {
+                top: 56px;
+                bottom: 70px;
+            }
+
+            .greeting-card {
+                padding: 32px 24px;
+            }
+
+            .greeting-title {
+                font-size: 24px;
+            }
+
+            .greeting-subtitle {
+                font-size: 13px;
+            }
+        }
+
         /* Update header buttons styles */
         .header-buttons button {
             background: transparent;
@@ -1522,6 +1643,16 @@
         </div>
         
         <div id="remainingMessages"></div>
+        <div id="greetingContainer" class="welcome-greeting" style="display:none;">
+            <div class="greeting-card">
+                <div class="greeting-icon">
+                    <i class="fas fa-robot"></i>
+                </div>
+                <h2 id="greetingTitle" class="greeting-title">Hello dear User</h2>
+                <p id="greetingSub" class="greeting-subtitle">The first university-specific AI and having up-to-date information about NASA's work</p>
+                <div class="greeting-accent"></div>
+            </div>
+        </div>
         <div id="chatbox"></div>
         
         <div class="input-container">
@@ -1640,6 +1771,12 @@
             const chatbox = document.getElementById("chatbox");
             const userId = localStorage.getItem('loggedInUserId');
             console.log('Sending message as user ID:', userId);
+
+            // Hide greeting if visible
+            const greetingContainer = document.getElementById('greetingContainer');
+            if (greetingContainer && greetingContainer.style.display !== 'none') {
+                greetingContainer.style.display = 'none';
+            }
 
             if (!userId) {
                 alert("You need to log in first!");
@@ -2103,6 +2240,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
         <script type="module" src="firebaseauth.js"></script>
+        <script type="module" src="greeting.js"></script>
 
         
 

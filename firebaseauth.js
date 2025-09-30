@@ -2,9 +2,9 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.11.1/firebase-app.js";
 import { 
     getAuth, 
-    createUserWithEmailAndPassword, 
-    signInWithEmailAndPassword, 
-    sendPasswordResetEmail 
+    GoogleAuthProvider,
+    signInWithPopup,
+    signInWithEmailAndPassword
 } from "https://www.gstatic.com/firebasejs/10.11.1/firebase-auth.js";
 import { 
     getFirestore, 
@@ -30,6 +30,8 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
+const googleProvider = new GoogleAuthProvider();
+googleProvider.setCustomParameters({ prompt: 'select_account' });
 
 // More detailed message display function
 function showMessage(message, divId, duration = 5000, isSuccess = false){
@@ -66,166 +68,102 @@ async function saveMessageToFirestore(userId, message, reply) {
     }
 }
 
-// Sign Up Event Listener
-const signUp = document.getElementById('submitSignUp');
-signUp?.addEventListener('click', (event) => {
-    event.preventDefault();
-    const email = document.getElementById('rEmail').value;
-    const password = document.getElementById('rPassword').value;
-    const firstName = document.getElementById('fName').value;
-    const lastName = document.getElementById('lName').value;
 
-    const auth = getAuth();
-    const db = getFirestore();
-
-    createUserWithEmailAndPassword(auth, email, password)
-    .then(async (userCredential) => {
-        const user = userCredential.user;
-        const userData = {
-            email, firstName, lastName,
-            // emailVerified retained for compatibility but now always considered true
-            emailVerified: true,
-            messageCount: 0,
-            lastMessageTime: serverTimestamp(),
-            lastResetTime: serverTimestamp(),
-            dailyLimit: 10,
-            suspended: false
-        };
-        await setDoc(doc(db, 'users', user.uid), userData);
-        return user;
-    })
-    .then(() => {
-        showMessage('Account Created. Please check your email for verification.', 'signUpMessage', 7000, true);
-        
-        // Redirect to verification guidance page
-        setTimeout(() => {
-            window.location.href = 'verify-email.html';
-        }, 3000);
-    })
-    .catch((error) => {
-        const errorCode = error.code;
-        if (errorCode == 'auth/email-already-in-use') {
-            showMessage('Email Address Already Exists !!!', 'signUpMessage');
-        } else {
-            showMessage('Unable to create User: ' + error.message, 'signUpMessage');
-        }
-    });
-});
-
-// Sign In Event Listener
-const signIn = document.getElementById('submitSignIn');
-signIn?.addEventListener('click', (event) => {
-    event.preventDefault();
-    const email = document.getElementById('email').value;
-    const password = document.getElementById('password').value;
-    const auth = getAuth();
-
-    signInWithEmailAndPassword(auth, email, password)
-    .then(async (userCredential) => {
-        const user = userCredential.user;
-        showMessage('Login is successful', 'signInMessage', 3000, true);
-        localStorage.setItem('loggedInUserId', user.uid);
-        window.location.href = 'homepage.html';
-    })
-    .catch((error) => {
-        const errorCode = error.code;
-        if (errorCode === 'auth/invalid-credential') {
-            showMessage('Incorrect Email or Password', 'signInMessage');
-        } else {
-            showMessage('Account does not Exist', 'signInMessage');
-        }
-    });
-});
-
-// Enhanced Forgot Password Function
-function sendPasswordReset(email) {
-    console.log(`Attempting to send password reset to: ${email}`);
-    
-    if (!email || email.trim() === '') {
-        showMessage('Please enter a valid email address', 'forgotPasswordMessage');
-        return Promise.reject(new Error('Email is empty'));
-    }
-    
-    const actionCodeSettings = {
-        // Redirect back to index after password reset confirmation
-        url: window.location.origin + '/index.html',
-        handleCodeInApp: false
-    };
-    
-    return sendPasswordResetEmail(auth, email, actionCodeSettings)
-        .then(() => {
-            console.log('Password reset email sent successfully');
-            return true;
-        })
-        .catch((error) => {
-            console.error('Error sending password reset:', error);
-            throw error;
-        });
-}
-
-// Forgot Password Event Listener
-const forgotPasswordBtn = document.getElementById('submitResetPassword');
-if (forgotPasswordBtn) {
-    console.log('Forgot password button found, adding event listener');
-    
-    forgotPasswordBtn.addEventListener('click', (event) => {
-        event.preventDefault();
-        console.log('Forgot password button clicked');
-        
-        const resetEmailInput = document.getElementById('resetEmail');
-        if (!resetEmailInput) {
-            console.error('Reset email input not found');
-            return;
-        }
-        
-        const email = resetEmailInput.value;
-        console.log(`Attempting password reset for: ${email}`);
-        
-        sendPasswordReset(email)
-            .then(() => {
-                showMessage('Password reset email sent! Check your inbox and spam folder.', 'forgotPasswordMessage', 5000, true);
-                
-                // Optional: Return to sign in page after a few seconds
-                setTimeout(() => {
-                    const forgotPasswordForm = document.getElementById('forgotPassword');
-                    const signInForm = document.getElementById('signIn');
-                    
-                    if (forgotPasswordForm && signInForm) {
-                        forgotPasswordForm.style.display = 'none';
-                        signInForm.style.display = 'block';
-                    }
-                }, 5000);
-            })
-            .catch((error) => {
-                const errorCode = error.code;
-                const errorMessage = error.message;
-                console.error(`Password reset error: ${errorCode} - ${errorMessage}`);
-                
-                if (errorCode === 'auth/user-not-found') {
-                    showMessage('No account exists with this email address.', 'forgotPasswordMessage');
-                } else if (errorCode === 'auth/invalid-email') {
-                    showMessage('Please enter a valid email address.', 'forgotPasswordMessage');
-                } else if (errorCode === 'auth/missing-android-pkg-name' || 
-                           errorCode === 'auth/missing-continue-uri' || 
-                           errorCode === 'auth/missing-ios-bundle-id') {
-                    showMessage('Configuration error. Please contact support.', 'forgotPasswordMessage');
-                    console.error('Firebase configuration error:', error);
-                } else {
-                    showMessage(`Error sending reset email: ${errorMessage}`, 'forgotPasswordMessage');
-                }
-            });
-    });
-} else {
-
-}
 
 // Email verification removed: resend button intentionally disabled
 
 // Export the saveMessageToFirestore function to use in other scripts
 export { saveMessageToFirestore };
 
-// Make the reset password function globally available
-window.sendPasswordReset = sendPasswordReset;
+// Email/password login (existing legacy users) - No signup or reset UI
+const submitSignIn = document.getElementById('submitSignIn');
+submitSignIn?.addEventListener('click', (e)=>{
+        e.preventDefault();
+        const emailInput = document.getElementById('email');
+        const passwordInput = document.getElementById('password');
+        if(!emailInput || !passwordInput) return;
+        const email = emailInput.value.trim();
+        const password = passwordInput.value;
+        if(!email || !password){
+                showMessage('Enter email and password','signInMessage');
+                return;
+        }
+        signInWithEmailAndPassword(auth, email, password)
+            .then((cred)=>{
+                localStorage.setItem('loggedInUserId', cred.user.uid);
+                showMessage('Login successful','signInMessage',1500,true);
+                setTimeout(()=>{ window.location.href='homepage.html'; },500);
+            })
+            .catch(err=>{
+                let msg='Login failed';
+                if (err.code === 'auth/invalid-credential' || err.code === 'auth/wrong-password') msg='Incorrect email or password';
+                else if (err.code === 'auth/user-not-found') msg='Account not found';
+                else if (err.code === 'auth/too-many-requests') msg='Too many attempts. Try again later.';
+                showMessage(msg,'signInMessage');
+            });
+});
+
+// Google Sign In / Sign Up (single flow)
+async function handleGoogleAuth(buttonSource){
+    try {
+        const result = await signInWithPopup(auth, googleProvider);
+        const user = result.user;
+
+        // Check if user document exists
+        const userRef = doc(db, 'users', user.uid);
+        const snap = await getDoc(userRef);
+        if (!snap.exists()) {
+            // Create initial user document
+            const displayName = user.displayName || '';
+            let firstName = '';
+            let lastName = '';
+            if (displayName) {
+                const parts = displayName.split(' ');
+                firstName = parts[0];
+                lastName = parts.slice(1).join(' ');
+            }
+            await setDoc(userRef, {
+                email: user.email,
+                firstName,
+                lastName,
+                emailVerified: true,
+                messageCount: 0,
+                lastMessageTime: serverTimestamp(),
+                lastResetTime: serverTimestamp(),
+                dailyLimit: 10,
+                suspended: false,
+                provider: 'google'
+            });
+        }
+
+        localStorage.setItem('loggedInUserId', user.uid);
+        window.location.href = 'homepage.html';
+    } catch (error) {
+        console.error('Google auth error:', error);
+        const msgDiv = document.getElementById('signInMessage') || document.getElementById('signUpMessage');
+        let friendly = 'Google sign-in failed';
+        if (error.code === 'auth/operation-not-allowed') {
+            friendly = 'Google sign-in is not enabled. Enable Google provider in Firebase Console > Authentication > Sign-in method.';
+        } else if (error.code === 'auth/popup-blocked') {
+            friendly = 'Popup was blocked by the browser. Allow popups and try again.';
+        } else if (error.code === 'auth/cancelled-popup-request') {
+            friendly = 'Popup closed before completing sign-in.';
+        } else if (error.code === 'auth/popup-closed-by-user') {
+            friendly = 'Popup closed. Please try again.';
+        } else if (error.code === 'auth/network-request-failed') {
+            friendly = 'Network error. Check your connection.';
+        }
+        if (msgDiv) {
+            msgDiv.style.display = 'block';
+            msgDiv.style.color = 'red';
+            msgDiv.textContent = friendly;
+            setTimeout(()=> msgDiv.style.display='none', 8000);
+        }
+    }
+}
+
+document.getElementById('googleSignIn')?.addEventListener('click', (e)=>{ e.preventDefault(); handleGoogleAuth('signin'); });
+
 
 
 
