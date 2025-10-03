@@ -188,10 +188,41 @@
         }
 
         .welcome-text h1 {
-            font-size: 24px;
-            color: var(--primary-color);
-            margin-bottom: 5px;
-            margin-left: 280px;
+            font-size: 34px;
+            font-weight: 700;
+            line-height: 1.15;
+            margin: 0 0 10px 0;
+            background: linear-gradient(90deg,#1d4ed8,#2563eb,#3b82f6);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            position: relative;
+            padding-bottom: 10px;
+        }
+
+        .welcome-text h1::after {
+            content: "";
+            position: absolute;
+            left: 0;
+            bottom: 0;
+            width: 70px;
+            height: 4px;
+            background: linear-gradient(90deg,#fda900,#f59e0b,#f97316);
+            border-radius: 4px;
+        }
+
+        .welcome-text .brand-frag {
+            color: var(--secondary-color);
+            background: none;
+            -webkit-background-clip: unset;
+            background-clip: unset;
+        }
+
+        @media (max-width: 992px) {
+            .welcome-text h1 { font-size: 26px; }
+        }
+        @media (max-width: 600px) {
+            .welcome-text h1 { font-size: 22px; }
         }
 
         .welcome-text p {
@@ -789,7 +820,7 @@
         <!-- Welcome Section -->
         <div class="welcome-section">
             <div class="welcome-text">
-                <h1>Welcome to User Information</h1>
+                <h1 data-i18n="homepage.welcomeTitle">Welcome to <span class="brand-frag">User Information</span></h1>
             </div>
             <div class="welcome-actions">
           

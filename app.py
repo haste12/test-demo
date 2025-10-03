@@ -6,6 +6,7 @@ from dotenv import load_dotenv
 from prompt import SYSTEM_PROMPT, GREETING_RESPONSE, CREATOR_RESPONSE, PRESIDENT_RESPONSE, REPLACEMENTS
 from datetime import datetime, timedelta
 from collections import defaultdict
+from functools import lru_cache
 import firebase_admin
 from firebase_admin import credentials, firestore
 import smtplib
@@ -264,17 +265,68 @@ def search_web(query):
         return "Sorry, I encountered an error while searching the web."
 
 # ---------------- NASA INTEGRATION ---------------- #
+##########################
+# Dynamic Space Keyword Detection
+##########################
+
+# Core grouped keywords (semantic categories) — easy to extend in code
+SPACE_KEYWORD_GROUPS = {
+    "core": ["nasa", "space", "astronomy", "galaxy", "cosmos", "orbital", "spacecraft", "telescope"],
+    "media": ["apod", "picture of the day", "astronomy picture", "space photo", "space image"],
+    "mars": ["mars", "mars rover", "perseverance", "curiosity", "opportunity", "ingenuity"],
+    "neo": ["neo", "asteroid", "asteroids", "near earth object", "meteor", "meteoroid"],
+    "stations": ["iss", "iss position", "international space station"],
+    "planets": ["planet positions", "planet alignment", "planets tonight"],
+    "news": ["space news", "nasa news", "mission update", "launch schedule", "rocket launch"],
+}
+
+# Firestore path for custom keywords (document holds an array field 'keywords')
+CUSTOM_KEYWORDS_DOC = ("config", "nasa_keywords")
+
+@lru_cache(maxsize=1)
+def _cached_custom_keywords(timestamp_bucket: int):
+    """Internal cached fetch for custom keywords. timestamp_bucket groups calls per minute.
+    Returns lower-cased list of custom keywords or empty list if missing.
+    """
+    try:
+        col, doc = CUSTOM_KEYWORDS_DOC
+        ref = db.collection(col).document(doc)
+        snap = ref.get()
+        if not snap.exists:
+            return []
+        data = snap.to_dict() or {}
+        kws = data.get('keywords', [])
+        if not isinstance(kws, list):
+            return []
+        return [str(k).lower() for k in kws]
+    except Exception as e:
+        print(f"Warning: could not load custom NASA keywords: {e}")
+        return []
+
+def get_all_space_keywords():
+    """Aggregate all static + dynamic (Firestore) keywords into a flat list (lowercased)."""
+    static = []
+    for group_list in SPACE_KEYWORD_GROUPS.values():
+        static.extend(group_list)
+    # Bucket by minute for lightweight refresh (invalidate cache each minute)
+    bucket = int(datetime.utcnow().timestamp() // 60)
+    custom = _cached_custom_keywords(bucket)
+    return list(dict.fromkeys([*static, *custom]))  # deduplicate preserving order
+
 def is_nasa_query(message: str) -> bool:
-    """Heuristic to decide if the user wants NASA / space data that benefits from real-time API calls."""
+    """Determine if message should trigger NASA data fetch.
+    Logic:
+      1. Direct keyword match (static or Firestore-added).
+      2. Temporal Mars queries (e.g., "latest mars", "mars today").
+    Add new keywords by either editing SPACE_KEYWORD_GROUPS or inserting into Firestore doc config/nasa_keywords.
+    """
     msg = message.lower()
-    keywords = [
-        "nasa", "space", "galaxy", "astronomy", "apod", "picture of the day", "mars rover", "perseverance",
-        "curiosity", "opportunity", "ingenuity", "neo", "asteroid", "asteroids", "near earth object",
-        "iss position", "international space station", "planet positions", "space news"
-    ]
-    # If explicitly asks for today's / latest photo or rover photos
+    keywords = get_all_space_keywords()
+    if any(k for k in keywords if k in msg):
+        return True
+    # Temporal pattern for Mars-specific recency queries
     temporal = ["today", "latest", "current", str(datetime.now().year)]
-    return any(k in msg for k in keywords) or ("mars" in msg and any(t in msg for t in temporal))
+    return ("mars" in msg) and any(t in msg for t in temporal)
 
 def fetch_nasa_data(user_message: str) -> dict:
     """Fetch relevant NASA data based on the content of the user message.
